@@ -11,6 +11,8 @@ from typing import Callable, Dict, Iterable, Optional
 
 @dataclass(frozen=True)
 class LogWatcherConfig:
+    """Параметры наблюдения за логом игры."""
+
     path: Path
     start_patterns: Iterable[str]
     poll_interval: float
@@ -18,6 +20,8 @@ class LogWatcherConfig:
 
 
 class LogWatcher:
+    """Наблюдает за игровым логом и сигнализирует о старте матча."""
+
     def __init__(
         self,
         path: str,
@@ -26,7 +30,8 @@ class LogWatcher:
         poll_interval: float = 0.1,
         debounce_seconds: float = 5.0,
     ) -> None:
-        self._cfg = LogWatcherConfig(
+        """Создаёт наблюдатель за логом."""
+        self._config = LogWatcherConfig(
             path=Path(path),
             start_patterns=start_patterns,
             poll_interval=poll_interval,
@@ -37,9 +42,10 @@ class LogWatcher:
         self._thread: Optional[threading.Thread] = None
         self._last_start_ts = 0.0
         self._last_log_ts: Dict[str, float] = {}
-        self._patterns = [re.compile(p) for p in start_patterns if p]
+        self._patterns = [re.compile(pattern) for pattern in start_patterns if pattern]
 
     def start(self) -> None:
+        """Запускает чтение лога."""
         if self._thread and self._thread.is_alive():
             return
         self._stop_event.clear()
@@ -47,20 +53,21 @@ class LogWatcher:
         self._thread.start()
 
     def stop(self) -> None:
+        """Останавливает чтение лога."""
         self._stop_event.set()
         if self._thread and self._thread.is_alive():
             self._thread.join(timeout=1)
 
     def _run(self) -> None:
-        self._log("start", f"[log] watcher started: {self._cfg.path}")
+        self._log("start", f"[log] watcher started: {self._config.path}")
         while not self._stop_event.is_set():
-            if not self._cfg.path.exists():
+            if not self._config.path.exists():
                 self._log_throttled(
                     "missing",
-                    f"[log] file not found, waiting: {self._cfg.path}",
+                    f"[log] file not found, waiting: {self._config.path}",
                     min_interval=5.0,
                 )
-                self._stop_event.wait(self._cfg.poll_interval)
+                self._stop_event.wait(self._config.poll_interval)
                 continue
             try:
                 self._tail_file()
@@ -70,15 +77,15 @@ class LogWatcher:
                     f"[log] watcher error: {exc}",
                     min_interval=5.0,
                 )
-                self._stop_event.wait(self._cfg.poll_interval)
+                self._stop_event.wait(self._config.poll_interval)
 
     def _tail_file(self) -> None:
-        with self._cfg.path.open("r", encoding="utf-8", errors="ignore") as handle:
+        with self._config.path.open("r", encoding="utf-8", errors="ignore") as handle:
             handle.seek(0, os.SEEK_END)
             offset = handle.tell()
             self._log_throttled(
                 "opened",
-                f"[log] watching: {self._cfg.path}",
+                f"[log] watching: {self._config.path}",
                 min_interval=5.0,
             )
 
@@ -92,11 +99,11 @@ class LogWatcher:
                     continue
 
                 try:
-                    size = self._cfg.path.stat().st_size
+                    size = self._config.path.stat().st_size
                 except FileNotFoundError:
                     self._log_throttled(
                         "missing",
-                        f"[log] file disappeared, reopening: {self._cfg.path}",
+                        f"[log] file disappeared, reopening: {self._config.path}",
                         min_interval=5.0,
                     )
                     return
@@ -104,12 +111,12 @@ class LogWatcher:
                 if size < offset:
                     self._log_throttled(
                         "truncated",
-                        f"[log] file truncated, reopening: {self._cfg.path}",
+                        f"[log] file truncated, reopening: {self._config.path}",
                         min_interval=5.0,
                     )
                     return
 
-                self._stop_event.wait(self._cfg.poll_interval)
+                self._stop_event.wait(self._config.poll_interval)
 
     def _match_pattern(self, line: str) -> Optional[str]:
         for pattern in self._patterns:
@@ -119,7 +126,7 @@ class LogWatcher:
 
     def _request_start(self, pattern: str) -> None:
         now = time.monotonic()
-        if now - self._last_start_ts < self._cfg.debounce_seconds:
+        if now - self._last_start_ts < self._config.debounce_seconds:
             return
         self._last_start_ts = now
         self._log("match", f"[log] matched pattern: {pattern}")
