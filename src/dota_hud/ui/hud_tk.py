@@ -249,6 +249,12 @@ class HudTk:
     def every(self, ms: int, fn: Callable[[], None]) -> None:
         self.root.after(ms, fn)
 
+    def set_on_close(self, callback: Callable[[], None]) -> None:
+        def handler() -> None:
+            callback()
+
+        self.root.protocol("WM_DELETE_WINDOW", handler)
+
     def run(self) -> None:
         self.root.mainloop()
 
