@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from pathlib import Path
+import threading
 
 from .config import load_config, Window
 from .events import format_mmss
 from .hotkeys import Hotkeys, HotkeysConfig
+from .log_watcher import LogWatcher
 from .scheduler import Scheduler
 from .ui.hud_tk import HudStyle, HudTk
 
@@ -47,6 +49,8 @@ def run_app(config_path: Path) -> None:
 
     hud = HudTk(style)
     scheduler = Scheduler(cfg.buckets)
+    auto_start_event = threading.Event()
+    watcher = None
     hotkeys = Hotkeys(
         HotkeysConfig(
             start=cfg.hotkeys.start,
@@ -57,10 +61,33 @@ def run_app(config_path: Path) -> None:
     )
     hotkeys.start()
 
+    if cfg.log_integration.enabled:
+        watcher = LogWatcher(
+            path=cfg.log_integration.path,
+            start_patterns=cfg.log_integration.start_patterns,
+            on_start=auto_start_event.set,
+            poll_interval=cfg.log_integration.poll_interval_ms / 1000.0,
+            debounce_seconds=cfg.log_integration.debounce_seconds,
+        )
+        watcher.start()
+
+    def on_close() -> None:
+        if watcher:
+            watcher.stop()
+        hud.close()
+
+    hud.set_on_close(on_close)
+
     def loop() -> None:
         hud.every(200, loop)
 
         try:
+            if auto_start_event.is_set():
+                auto_start_event.clear()
+                if not scheduler.is_running:
+                    scheduler.reset()
+                    scheduler.start()
+
             for action in hotkeys.drain():
                 if action == "stop":
                     scheduler.stop()
@@ -110,3 +137,5 @@ def run_app(config_path: Path) -> None:
         hud.run()
     finally:
         hotkeys.stop()
+        if watcher:
+            watcher.stop()

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Dict, Tuple
 import yaml
@@ -30,6 +30,18 @@ class HotkeysConfig:
 
 
 @dataclass(frozen=True)
+class LogIntegrationConfig:
+    enabled: bool = False
+    path: str = ""
+    start_patterns: List[str] = field(default_factory=lambda: [
+        "GAME_IN_PROGRESS",
+        "DOTA_GAMERULES_STATE_GAME_IN_PROGRESS",
+    ])
+    poll_interval_ms: int = 100
+    debounce_seconds: float = 5.0
+
+
+@dataclass(frozen=True)
 class Window:
     from_t: int
     to_t: int
@@ -42,6 +54,7 @@ class Window:
 class AppConfig:
     hud: HudConfig
     hotkeys: HotkeysConfig
+    log_integration: LogIntegrationConfig
     buckets: List[Bucket]
     danger_windows: List[Tuple[int, int, str]]   # для обратной совместимости
     windows: List[Window]
@@ -81,6 +94,10 @@ def load_config(path: Path) -> AppConfig:
 
     hud = HudConfig(**(data.get("hud", {}) or {}))
     hotkeys = HotkeysConfig(**(data.get("hotkeys", {}) or {}))
+    log_data = dict(data.get("log_integration", {}) or {})
+    if log_data.get("start_patterns") is None:
+        log_data.pop("start_patterns", None)
+    log_integration = LogIntegrationConfig(**log_data)
 
     # ---- buckets (тайминги) ----
     buckets_map: Dict[int, list[str]] = {}
@@ -121,6 +138,7 @@ def load_config(path: Path) -> AppConfig:
     return AppConfig(
         hud=hud,
         hotkeys=hotkeys,
+        log_integration=log_integration,
         buckets=buckets,
         danger_windows=danger_windows,
         windows=windows,
