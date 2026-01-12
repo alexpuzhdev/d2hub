@@ -9,18 +9,23 @@ from typing import Callable, Optional
 
 @dataclass
 class GSIState:
+    """Снимок состояния, полученный через GSI."""
+
     clock_time: Optional[int] = None
     game_state: Optional[str] = None
     paused: bool = False
 
 
 class GSIServer:
+    """HTTP сервер для приёма событий GSI."""
+
     def __init__(
         self,
         host: str = "127.0.0.1",
         port: int = 4000,
         on_update: Callable[[GSIState], None] | None = None,
     ) -> None:
+        """Создаёт сервер GSI."""
         self._host = host
         self._port = port
         self._on_update = on_update
@@ -28,7 +33,7 @@ class GSIServer:
         self.state = GSIState()
 
         class Handler(BaseHTTPRequestHandler):
-            def do_POST(inner_self):
+            def do_POST(inner_self) -> None:
                 length = int(inner_self.headers.get("Content-Length", 0))
                 raw = inner_self.rfile.read(length)
 
@@ -70,9 +75,11 @@ class GSIServer:
         )
 
     def start(self) -> None:
+        """Запускает сервер GSI."""
         print(f"[GSI] server started on {self._host}:{self._port}")
         self._thread.start()
 
     def stop(self) -> None:
+        """Останавливает сервер GSI."""
         print("[GSI] server stopped")
         self._server.shutdown()
