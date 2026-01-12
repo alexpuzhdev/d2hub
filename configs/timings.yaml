@@ -12,6 +12,15 @@ hotkeys:
   reset: F10
   lock: F7
 
+log_integration:
+  enabled: false
+  path: "C:/Program Files (x86)/Steam/steamapps/common/dota 2 beta/game/dota/console.log"
+  start_patterns:
+    - "GAME_IN_PROGRESS"
+    - "DOTA_GAMERULES_STATE_GAME_IN_PROGRESS"
+  poll_interval_ms: 100
+  debounce_seconds: 8
+
 
 timeline:
   - at: "0:00"
