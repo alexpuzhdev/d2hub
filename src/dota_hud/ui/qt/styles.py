@@ -18,12 +18,24 @@ class HudColors:
 
 
 def default_colors() -> HudColors:
-    """Возвращает палитру в стиле Dota+."""
+    """Палитра, визуально приближенная к Dota+ HUD."""
     return HudColors(
-        background_base=QtGui.QColor(24, 32, 40),
-        text_primary=QtGui.QColor(233, 236, 240),
-        text_next=QtGui.QColor(217, 225, 235),
-        text_muted=QtGui.QColor(168, 176, 186),
-        text_warning=QtGui.QColor(233, 199, 129),
-        text_danger=QtGui.QColor(232, 156, 128),
+        # холодный графит с зелёно-циановым уклоном
+        background_base=QtGui.QColor(26, 38, 40),
+
+        # основной текст: не чисто белый
+        text_primary=QtGui.QColor(225, 228, 232),
+
+        # вторичный текст
+        text_next=QtGui.QColor(200, 206, 214),
+
+        # приглушённый текст
+        text_muted=QtGui.QColor(160, 168, 176),
+
+        # warning: золото
+        text_warning=QtGui.QColor(215, 185, 120),
+
+        # danger: приглушённый кирпично-красный
+        text_danger=QtGui.QColor(210, 135, 120),
     )
+

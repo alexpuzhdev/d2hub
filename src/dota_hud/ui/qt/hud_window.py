@@ -124,30 +124,41 @@ class HudQt(QtWidgets.QWidget):
         self.after.setStyleSheet(self._label_style(self._colors.text_muted))
 
     def paintEvent(self, event: QtGui.QPaintEvent) -> None:
-        """Отрисовывает фон HUD."""
         painter = QtGui.QPainter(self)
-        painter.setRenderHint(QtGui.QPainter.Antialiasing, True)
+        painter.setRenderHint(QtGui.QPainter.Antialiasing, False)
 
-        rect = self.rect().adjusted(1, 1, -1, -1)
-        max_alpha = max(0, min(255, int(255 * self._style.alpha)))
-        left_alpha = max(0, min(255, int(max_alpha * 0.4)))
-        right_alpha = max(0, min(255, int(max_alpha * 0.9)))
+        rect = self.rect()
 
-        left = QtGui.QColor(self._colors.background_base)
-        right = QtGui.QColor(self._colors.background_base)
-        left.setAlpha(left_alpha)
-        right.setAlpha(right_alpha)
+        base = QtGui.QColor(self._colors.background_base)
+        max_alpha = int(255 * 0.45)  # стартовая прозрачность
 
-        gradient = QtGui.QLinearGradient(rect.left(), rect.top(), rect.right(), rect.top())
-        gradient.setColorAt(0.0, left)
-        gradient.setColorAt(1.0, right)
+        gradient = QtGui.QLinearGradient(
+            rect.left(),
+            0,
+            rect.right(),
+            0,
+        )
 
-        radius = 10.0
-        path = QtGui.QPainterPath()
-        path.addRoundedRect(QtCore.QRectF(rect), radius, radius)
-        painter.fillPath(path, gradient)
+        # слева — читаемо
+        gradient.setColorAt(
+            0.0,
+            QtGui.QColor(base.red(), base.green(), base.blue(), max_alpha),
+        )
+
+        # середина — уже почти нет
+        gradient.setColorAt(
+            0.7,
+            QtGui.QColor(base.red(), base.green(), base.blue(), int(max_alpha * 0.15)),
+        )
+
+        # справа — НОЛЬ
+        gradient.setColorAt(
+            1.0,
+            QtGui.QColor(base.red(), base.green(), base.blue(), 0),
+        )
+
+        painter.fillRect(rect, gradient)
         painter.end()
-        super().paintEvent(event)
 
     def _set_clickthrough(self, enabled: bool) -> None:
         self.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents, enabled)
