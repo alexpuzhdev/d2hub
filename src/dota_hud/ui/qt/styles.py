@@ -13,6 +13,7 @@ class HudColors:
     text_primary: QtGui.QColor
     text_next: QtGui.QColor
     text_muted: QtGui.QColor
+    text_macro: QtGui.QColor
     text_info: QtGui.QColor
     text_warning: QtGui.QColor
     text_danger: QtGui.QColor
@@ -32,6 +33,9 @@ def default_colors() -> HudColors:
 
         # приглушённый текст
         text_muted=QtGui.QColor(160, 168, 176),
+
+        # macro: мягкий фиолетовый
+        text_macro=QtGui.QColor(196, 170, 255),
 
         # info: нейтральный светлый
         text_info=QtGui.QColor(208, 208, 208),
