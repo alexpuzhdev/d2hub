@@ -11,9 +11,12 @@ from ..domain.warning_windows import WarningWindowService
 from ..infrastructure.gsi_server import GSIServer, GSIState
 from ..infrastructure.hotkeys import Hotkeys
 from ..infrastructure.log_watcher import LogWatcher
-from ..ui.hud_style import HudStyle
+from ..ui.factory import UiFactory
+from .commands import HudAction
 from .hud_port import HudPort
-from .hud_presenter import HudPresenter
+from .hud_presenter import HudPresenter, PresenterConfig
+from .models import GameStateSnapshot
+from .use_cases import HudCycleUseCase
 
 
 class GsiStateStore:
@@ -41,10 +44,19 @@ class AppController:
     def __init__(self, config: AppConfig, hud: HudPort | None = None) -> None:
         """Создаёт контроллер приложения."""
         self._config = config
+        self._ui_factory = UiFactory()
         self._hud = hud or self._build_hud(config)
         self._scheduler = Scheduler(config.buckets)
         self._warning_service = WarningWindowService()
-        self._presenter = HudPresenter()
+        self._presenter = HudPresenter(
+            PresenterConfig(macro_timings=tuple(self._config.macro_timings))
+        )
+        self._cycle = HudCycleUseCase(
+            scheduler=self._scheduler,
+            warning_service=self._warning_service,
+            presenter=self._presenter,
+            windows=self._config.windows,
+        )
 
         self._gsi_state_store = GsiStateStore()
         self._gsi_server = GSIServer(on_update=self._gsi_state_store.update)
@@ -73,23 +85,8 @@ class AppController:
         """Создаёт контроллер из конфигурационного файла."""
         return AppController(load_config(config_path))
 
-    def _build_style(self, config: AppConfig) -> HudStyle:
-        return HudStyle(
-            title=config.hud.title,
-            width=config.hud.width,
-            height=config.hud.height,
-            x=config.hud.x,
-            y=config.hud.y,
-            alpha=config.hud.alpha,
-            font_family=config.hud.font_family,
-            font_size=config.hud.font_size,
-            font_weight=config.hud.font_weight,
-        )
-
     def _build_hud(self, config: AppConfig) -> HudPort:
-        from ..ui.qt.hud_window import HudQt
-
-        return HudQt(self._build_style(config))
+        return self._ui_factory.build(config.hud)
 
     def _build_log_watcher(self, config: AppConfig) -> LogWatcher | None:
         if not config.log_integration.enabled:
@@ -119,39 +116,25 @@ class AppController:
 
         try:
             gsi_state = self._gsi_state_store.get()
-            paused_status = None
-
-            if gsi_state and gsi_state.clock_time is not None:
-                self._scheduler.set_external_elapsed(gsi_state.clock_time)
-
-                if gsi_state.paused:
-                    paused_status = "PAUSED (DOTA)"
-
-            for action in self._hotkeys.drain():
-                if action == "stop":
-                    self._scheduler.stop()
-                elif action == "reset":
-                    self._scheduler.reset()
-                elif action == "start":
-                    self._scheduler.start()
-                elif action == "lock":
-                    self._hud.toggle_lock()
-
-            tick_state = self._scheduler.tick()
-            active_windows = self._warning_service.active_windows(
-                tick_state.elapsed,
-                self._config.windows,
+            game_state = (
+                GameStateSnapshot(
+                    clock_time=gsi_state.clock_time,
+                    paused=gsi_state.paused,
+                )
+                if gsi_state
+                else None
             )
-            warning_level = self._warning_service.warning_level(active_windows)
-            warning_text = active_windows[0].text if active_windows else None
-            view_model = self._presenter.build_view_model(
-                tick_state,
-                warning_text=warning_text,
-            )
+
+            actions = self._hotkeys.drain()
+            if HudAction.LOCK in actions:
+                self._hud.toggle_lock()
+            cycle_actions = [action for action in actions if action is not HudAction.LOCK]
+            cycle = self._cycle.run(game_state, cycle_actions)
+            view_model = cycle.hud_state
 
             self._hud.set_timer(view_model.timer_text)
-            self._hud.set_warning(warning_level)
-            self._hud.set_now(paused_status or view_model.now_text)
+            self._hud.set_warning(view_model.warning.text, view_model.warning.level)
+            self._hud.set_now(cycle.paused_status or view_model.now_text)
 
             self._hud.set_next(view_model.next_text)
             self._hud.set_after(view_model.after_text)
