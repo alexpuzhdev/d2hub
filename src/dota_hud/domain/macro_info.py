@@ -33,6 +33,10 @@ DEFAULT_MACRO_TIMINGS: tuple[MacroTiming, ...] = (
 )
 
 
-def build_macro_lines(elapsed: int) -> list[str]:
+def build_macro_lines(
+    elapsed: int,
+    timings: tuple[MacroTiming, ...] | list[MacroTiming] | None = None,
+) -> list[str]:
     """Собирает строки с базовой макро-информацией."""
-    return [f"{timing.name}: {timing.status(elapsed)}" for timing in DEFAULT_MACRO_TIMINGS]
+    source = timings if timings is not None else DEFAULT_MACRO_TIMINGS
+    return [f"{timing.name}: {timing.status(elapsed)}" for timing in source]
