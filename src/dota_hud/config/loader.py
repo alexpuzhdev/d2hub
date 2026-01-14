@@ -43,7 +43,10 @@ def load_config(path: Path) -> AppConfig:
     """Загружает конфигурацию из YAML файла."""
     data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
 
-    hud = HudConfig(**(data.get("hud", {}) or {}))
+    hud_data = dict(data.get("hud", {}) or {})
+    hud_data.pop("ui", None)
+    data.pop("ui", None)
+    hud = HudConfig(**hud_data)
     hotkeys = HotkeysConfig(**(data.get("hotkeys", {}) or {}))
     log_data = dict(data.get("log_integration", {}) or {})
     if log_data.get("start_patterns") is None:
