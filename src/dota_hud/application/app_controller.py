@@ -147,10 +147,11 @@ class AppController:
             view_model = self._presenter.build_view_model(
                 tick_state,
                 warning_text=warning_text,
+                warning_level=warning_level,
             )
 
             self._hud.set_timer(view_model.timer_text)
-            self._hud.set_warning(warning_level)
+            self._hud.set_warning(view_model.warning.text, view_model.warning.level)
             self._hud.set_now(paused_status or view_model.now_text)
 
             self._hud.set_next(view_model.next_text)
