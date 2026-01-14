@@ -11,7 +11,8 @@ from ..infrastructure.gsi_server import GSIServer, GSIState
 from ..infrastructure.hotkeys import Hotkeys
 from ..infrastructure.log_watcher import LogWatcher
 from ..domain.scheduler import Scheduler
-from ..ui.hud_tk import HudStyle, HudTk
+from ..ui import create_hud
+from ..ui.hud_style import HudStyle
 from .hud_presenter import HudPresenter
 
 
@@ -40,7 +41,11 @@ class AppController:
     def __init__(self, config: AppConfig) -> None:
         """Создаёт контроллер приложения."""
         self._config = config
-        self._hud = HudTk(self._build_style(config))
+        self._hud = create_hud(
+            self._build_style(config),
+            config.ui.backend,
+            allow_tk_fallback=config.ui.allow_tk_fallback,
+        )
         self._scheduler = Scheduler(config.buckets)
         self._warning_service = WarningWindowService()
         self._presenter = HudPresenter()
