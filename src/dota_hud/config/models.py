@@ -18,7 +18,7 @@ class HudConfig:
     y: int = 30
     alpha: float = 0.92
     font_family: str = "Segoe UI"
-    font_size: int = 15
+    font_size: int = 18
     font_weight: str = "bold"
 
 

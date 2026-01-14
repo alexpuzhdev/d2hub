@@ -42,18 +42,18 @@ class HudPresenter:
         else:
             now_text = event_text
 
-        next_text = "NEXT: —"
+        next_text = "ДАЛЕЕ: —"
         if tick_state.next_event:
             left = tick_state.next_event.t - tick_state.elapsed
             next_text = (
-                f"NEXT {format_mmss(tick_state.next_event.t)} ({left}s)\n"
+                f"ДАЛЕЕ {format_mmss(tick_state.next_event.t)} ({left}с)\n"
                 f"{self._format_items(tick_state.next_event.items)}"
             )
 
-        after_text = "AFTER: —"
+        after_text = "ПОТОМ: —"
         if tick_state.after_event:
             after_text = (
-                f"AFTER {format_mmss(tick_state.after_event.t)}\n"
+                f"ПОТОМ {format_mmss(tick_state.after_event.t)}\n"
                 f"{self._format_items(tick_state.after_event.items)}"
             )
 
@@ -63,7 +63,7 @@ class HudPresenter:
 
         return HudViewModel(
             timer_text=format_mmss(tick_state.elapsed),
-            now_text=now_text,
+            now_text=event_text,
             next_text=next_text,
             after_text=after_text,
         )
