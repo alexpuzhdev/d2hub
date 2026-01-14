@@ -127,13 +127,35 @@ class AppController:
 
         try:
             gsi_state = self._gsi_state_store.get()
-            game_state = (
-                GameStateSnapshot(
-                    clock_time=gsi_state.clock_time,
-                    paused=gsi_state.paused,
-                )
-                if gsi_state
-                else None
+            paused_status = None
+
+            if gsi_state and gsi_state.clock_time is not None:
+                self._scheduler.set_external_elapsed(gsi_state.clock_time)
+
+                if gsi_state.paused:
+                    paused_status = "PAUSED (DOTA)"
+
+            for action in self._hotkeys.drain():
+                if action == "stop":
+                    self._scheduler.stop()
+                elif action == "reset":
+                    self._scheduler.reset()
+                elif action == "start":
+                    self._scheduler.start()
+                elif action == "lock":
+                    self._hud.toggle_lock()
+
+            tick_state = self._scheduler.tick()
+            active_windows = self._warning_service.active_windows(
+                tick_state.elapsed,
+                self._config.windows,
+            )
+            warning_level = self._warning_service.warning_level(active_windows)
+            warning_text = active_windows[0].text if active_windows else None
+            view_model = self._presenter.build_view_model(
+                tick_state,
+                warning_text=warning_text,
+                warning_level=warning_level,
             )
 
             actions = self._hotkeys.drain()
@@ -145,7 +167,7 @@ class AppController:
 
             self._hud.set_timer(view_model.timer_text)
             self._hud.set_warning(view_model.warning.text, view_model.warning.level)
-            self._hud.set_now(cycle.paused_status or view_model.now_text)
+            self._hud.set_now(paused_status or view_model.now_text)
 
             self._hud.set_next(view_model.next_text)
             self._hud.set_after(view_model.after_text)
