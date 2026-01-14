@@ -3,8 +3,9 @@ from __future__ import annotations
 import sys
 import threading
 import tkinter as tk
-from dataclasses import dataclass
 from typing import Callable, Optional
+
+from .hud_style import HudStyle
 
 if sys.platform == "win32":
     import ctypes
@@ -35,19 +36,6 @@ if sys.platform == "win32":
     RedrawWindow = user32.RedrawWindow
     RedrawWindow.argtypes = [wintypes.HWND, wintypes.LPRECT, wintypes.HRGN, wintypes.UINT]
     RedrawWindow.restype = wintypes.BOOL
-
-
-@dataclass(frozen=True)
-class HudStyle:
-    title: str
-    width: int
-    height: int
-    x: int
-    y: int
-    alpha: float
-    font_family: str
-    font_size: int
-    font_weight: str
 
 
 class HudTk:
