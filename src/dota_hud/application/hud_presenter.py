@@ -3,8 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from ..domain.events import format_mmss
+from ..domain.macro_info import DEFAULT_MACRO_TIMINGS, MacroTiming, build_macro_lines
 from ..domain.scheduler import TickState
-from ..ui.view_models import HudViewModel
+from .models import HudState, WarningState
 
 
 @dataclass(frozen=True)
@@ -12,6 +13,7 @@ class PresenterConfig:
     """Настройки отображения текстовых блоков."""
 
     max_lines: int = 2
+    macro_timings: tuple[MacroTiming, ...] = DEFAULT_MACRO_TIMINGS
 
 
 class HudPresenter:
@@ -21,35 +23,47 @@ class HudPresenter:
         """Создаёт форматтер текста HUD."""
         self._config = config or PresenterConfig()
 
-    def build_view_model(self, tick_state: TickState) -> HudViewModel:
+    def build_view_model(
+        self,
+        tick_state: TickState,
+        warning_text: str | None = None,
+        warning_level: str | None = None,
+    ) -> HudState:
         """Собирает модель отображения для текущего состояния."""
-        now_text = None
+        event_text = None
         if tick_state.now:
-            now_text = (
+            event_text = (
                 f"NOW @ {format_mmss(tick_state.now.t)}\n"
                 f"{self._format_items(tick_state.now.items)}"
             )
+        if event_text is None:
+            event_text = "NOW: —"
 
-        next_text = "NEXT: —"
+        next_text = "ДАЛЕЕ: —"
         if tick_state.next_event:
             left = tick_state.next_event.t - tick_state.elapsed
             next_text = (
-                f"NEXT {format_mmss(tick_state.next_event.t)} ({left}s)\n"
+                f"ДАЛЕЕ {format_mmss(tick_state.next_event.t)} ({left}с)\n"
                 f"{self._format_items(tick_state.next_event.items)}"
             )
 
-        after_text = "AFTER: —"
+        after_text = "ПОТОМ: —"
         if tick_state.after_event:
             after_text = (
-                f"AFTER {format_mmss(tick_state.after_event.t)}\n"
+                f"ПОТОМ {format_mmss(tick_state.after_event.t)}\n"
                 f"{self._format_items(tick_state.after_event.items)}"
             )
 
-        return HudViewModel(
+        macro_lines = build_macro_lines(tick_state.elapsed, self._config.macro_timings)
+        if macro_lines:
+            after_text = "\n".join([after_text, "MACRO:", *macro_lines])
+
+        return HudState(
             timer_text=format_mmss(tick_state.elapsed),
-            now_text=now_text,
+            now_text=event_text,
             next_text=next_text,
             after_text=after_text,
+            warning=WarningState(text=warning_text, level=warning_level),
         )
 
     def _format_items(self, items: list[str]) -> str:

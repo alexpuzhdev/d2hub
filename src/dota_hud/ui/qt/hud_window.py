@@ -56,22 +56,26 @@ class HudQt(QtWidgets.QWidget):
         self.timer.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
         self.timer.setFont(self._font(self._style.font_size + 12, "bold"))
 
+        self.warning = QtWidgets.QLabel("")
+        self._configure_block_label(self.warning, self._style.font_size)
+
         self.now = QtWidgets.QLabel(
-            "READY  |  F8 START  F9 STOP  F10 RESET  F7 LOCK"
+            "ГОТОВО  |  F8 СТАРТ  F9 СТОП  F10 СБРОС  F7 БЛОК"
         )
         self._configure_block_label(self.now, self._style.font_size)
 
-        self.next = QtWidgets.QLabel("NEXT: —")
+        self.next = QtWidgets.QLabel("ДАЛЕЕ: —")
         self._configure_block_label(self.next, self._style.font_size)
 
-        self.after = QtWidgets.QLabel("AFTER: —")
+        self.after = QtWidgets.QLabel("ПОТОМ: —")
         self._configure_block_label(
             self.after,
-            max(10, self._style.font_size - 1),
+            self._style.font_size,
             weight="normal",
         )
 
         layout.addWidget(self.timer)
+        layout.addWidget(self.warning)
         layout.addWidget(self.now)
         layout.addWidget(self.next)
         layout.addWidget(self.after)
@@ -114,14 +118,18 @@ class HudQt(QtWidgets.QWidget):
 
     def _apply_text_colors(self) -> None:
         self.timer.setStyleSheet(self._label_style(self._colors.text_primary))
-        if self._warning_level == "danger":
-            self.now.setStyleSheet(self._label_style(self._colors.text_danger))
-        elif self._warning_level == "warn":
-            self.now.setStyleSheet(self._label_style(self._colors.text_warning))
-        else:
-            self.now.setStyleSheet(self._label_style(self._colors.text_primary))
+        self.now.setStyleSheet(self._label_style(self._colors.text_primary))
         self.next.setStyleSheet(self._label_style(self._colors.text_next))
-        self.after.setStyleSheet(self._label_style(self._colors.text_muted))
+        self.after.setStyleSheet(self._label_style(self._colors.text_primary))
+        if self._warning_level == "danger":
+            warning_color = self._colors.text_danger
+        elif self._warning_level == "warn":
+            warning_color = self._colors.text_warning
+        elif self._warning_level == "info":
+            warning_color = self._colors.text_info
+        else:
+            warning_color = self._colors.text_primary
+        self.warning.setStyleSheet(self._label_style(warning_color))
 
     def paintEvent(self, event: QtGui.QPaintEvent) -> None:
         painter = QtGui.QPainter(self)
@@ -196,10 +204,11 @@ class HudQt(QtWidgets.QWidget):
         self.move(event.globalPosition().toPoint() - self._drag_offset)
         event.accept()
 
-    def set_warning(self, level: str | bool) -> None:
+    def set_warning(self, text: str | None, level: str | None = None) -> None:
         """Обновляет визуальный уровень предупреждения."""
-        if isinstance(level, bool):
-            self._warning_level = "warn" if level else ""
+        self.warning.setText(text or "")
+        if level is None and isinstance(text, bool):
+            self._warning_level = "warn" if text else ""
         else:
             self._warning_level = str(level or "")
         self._apply_text_colors()

@@ -19,9 +19,13 @@ class WarningWindowService:
 
     def active_windows(self, elapsed: int, windows: list[WarningWindow]) -> list[WarningWindow]:
         """Возвращает список активных окон предупреждений."""
-        active = [window for window in windows if window.from_t <= elapsed <= window.to_t]
-        active.sort(key=lambda window: window.priority, reverse=True)
-        return active
+        active = [
+            (index, window)
+            for index, window in enumerate(windows)
+            if window.from_t <= elapsed <= window.to_t
+        ]
+        active.sort(key=lambda item: (-item[1].priority, item[1].from_t, item[0]))
+        return [window for _, window in active]
 
     def warning_level(self, active_windows: list[WarningWindow]) -> str:
         """Возвращает уровень предупреждения по активным окнам."""
