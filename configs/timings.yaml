@@ -1,12 +1,14 @@
 hud:
   title: "Dota HUD"
   width: 549
-  height: 400
+  height: 840
   x: 30
   y: 30
   alpha: 0.60
+  ui: qt
 
 hotkeys:
+  enabled: false
   start: F8
   stop: F9
   reset: F10
