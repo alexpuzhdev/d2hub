@@ -22,6 +22,8 @@ class HudQt(QtWidgets.QWidget):
         self._style = style
         self._colors = default_colors()
         self._warning_level = ""
+        self._warning_blink_left = 0
+        self._warning_flash_visible = False
         self._locked = False
         self._drag_enabled = True
         self._drag_offset = QtCore.QPoint()
@@ -67,18 +69,14 @@ class HudQt(QtWidgets.QWidget):
         self.next = QtWidgets.QLabel("ДАЛЕЕ: —")
         self._configure_block_label(self.next, self._style.font_size)
 
-        self.after = QtWidgets.QLabel("ПОТОМ: —")
-        self._configure_block_label(
-            self.after,
-            self._style.font_size,
-            weight="normal",
-        )
+        self.after = QtWidgets.QLabel("")
+        self._configure_block_label(self.after, self._style.font_size)
+        self.after.setVisible(False)
 
         layout.addWidget(self.timer)
         layout.addWidget(self.warning)
         layout.addWidget(self.now)
         layout.addWidget(self.next)
-        layout.addWidget(self.after)
         layout.addStretch(1)
 
         self.setLayout(layout)
@@ -120,7 +118,7 @@ class HudQt(QtWidgets.QWidget):
         self.timer.setStyleSheet(self._label_style(self._colors.text_primary))
         self.now.setStyleSheet(self._label_style(self._colors.text_primary))
         self.next.setStyleSheet(self._label_style(self._colors.text_next))
-        self.after.setStyleSheet(self._label_style(self._colors.text_primary))
+        self.after.setStyleSheet(self._label_style(self._colors.text_macro))
         if self._warning_level == "danger":
             warning_color = self._colors.text_danger
         elif self._warning_level == "warn":
@@ -138,7 +136,7 @@ class HudQt(QtWidgets.QWidget):
         rect = self.rect()
 
         base = QtGui.QColor(self._colors.background_base)
-        max_alpha = int(255 * 0.45)  # стартовая прозрачность
+        max_alpha = int(255 * 0.6)  # стартовая прозрачность
 
         gradient = QtGui.QLinearGradient(
             rect.left(),
@@ -156,7 +154,7 @@ class HudQt(QtWidgets.QWidget):
         # середина — уже почти нет
         gradient.setColorAt(
             0.7,
-            QtGui.QColor(base.red(), base.green(), base.blue(), int(max_alpha * 0.15)),
+            QtGui.QColor(base.red(), base.green(), base.blue(), int(max_alpha * 0.3)),
         )
 
         # справа — НОЛЬ
@@ -166,6 +164,51 @@ class HudQt(QtWidgets.QWidget):
         )
 
         painter.fillRect(rect, gradient)
+
+        if self._warning_flash_visible:
+            flash_color = None
+            if self._warning_level == "danger":
+                flash_color = self._colors.text_danger
+            elif self._warning_level == "warn":
+                flash_color = self._colors.text_warning
+
+            if flash_color:
+                warning_rect = self.warning.geometry()
+                overlay = QtGui.QLinearGradient(
+                    warning_rect.left(),
+                    0,
+                    warning_rect.right(),
+                    0,
+                )
+                overlay_alpha = 120
+                overlay.setColorAt(
+                    0.0,
+                    QtGui.QColor(
+                        flash_color.red(),
+                        flash_color.green(),
+                        flash_color.blue(),
+                        overlay_alpha,
+                    ),
+                )
+                overlay.setColorAt(
+                    0.7,
+                    QtGui.QColor(
+                        flash_color.red(),
+                        flash_color.green(),
+                        flash_color.blue(),
+                        int(overlay_alpha * 0.35),
+                    ),
+                )
+                overlay.setColorAt(
+                    1.0,
+                    QtGui.QColor(
+                        flash_color.red(),
+                        flash_color.green(),
+                        flash_color.blue(),
+                        0,
+                    ),
+                )
+                painter.fillRect(warning_rect, overlay)
         painter.end()
 
     def _set_clickthrough(self, enabled: bool) -> None:
@@ -204,7 +247,12 @@ class HudQt(QtWidgets.QWidget):
         self.move(event.globalPosition().toPoint() - self._drag_offset)
         event.accept()
 
-    def set_warning(self, text: str | None, level: str | None = None) -> None:
+    def set_warning(
+        self,
+        text: str | None,
+        level: str | None = None,
+        blink: bool = False,
+    ) -> None:
         """Обновляет визуальный уровень предупреждения."""
         self.warning.setText(text or "")
         if level is None and isinstance(text, bool):
@@ -212,6 +260,25 @@ class HudQt(QtWidgets.QWidget):
         else:
             self._warning_level = str(level or "")
         self._apply_text_colors()
+        if blink:
+            self._start_warning_blink()
+        self.update()
+
+    def _start_warning_blink(self) -> None:
+        self._warning_blink_left = 4
+        self._warning_flash_visible = True
+        self._blink_warning()
+
+    def _blink_warning(self) -> None:
+        if self._warning_blink_left <= 0:
+            self._warning_flash_visible = False
+            self.warning.setVisible(True)
+            self.update()
+            return
+        self._warning_flash_visible = not self._warning_flash_visible
+        self.warning.setVisible(True)
+        self._warning_blink_left -= 1
+        QtCore.QTimer.singleShot(150, self._blink_warning)
         self.update()
 
     def set_timer(self, text: str) -> None:
@@ -229,6 +296,7 @@ class HudQt(QtWidgets.QWidget):
     def set_after(self, text: str) -> None:
         """Обновляет блок AFTER."""
         self.after.setText(text)
+        self.after.setVisible(bool(text))
 
     def every(self, ms: int, fn: Callable[[], None]) -> None:
         """Планирует повторный вызов функции через заданный интервал."""
