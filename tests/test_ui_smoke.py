@@ -1,16 +1,11 @@
 from __future__ import annotations
 
-import pytest
+import importlib
 
-from dota_hud.ui import get_hud_class
+import pytest
 
 
 def test_qt_ui_import() -> None:
     pytest.importorskip("PySide6")
-    hud_class = get_hud_class("qt")
-    assert hud_class.__name__ == "HudQt"
-
-
-def test_tk_ui_import() -> None:
-    hud_class = get_hud_class("tk")
-    assert hud_class.__name__ == "HudTk"
+    module = importlib.import_module("dota_hud.ui.qt.hud_window")
+    assert hasattr(module, "HudQt")

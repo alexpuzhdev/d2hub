@@ -19,6 +19,12 @@ class HudConfig:
     font_family: str = "Segoe UI"
     font_size: int = 15
     font_weight: str = "bold"
+    ui: str = "tk"
+
+
+@dataclass(frozen=True)
+class UiConfig:
+    choice: str = "tk"
 
 
 @dataclass(frozen=True)
@@ -99,14 +105,9 @@ def load_config(path: Path) -> AppConfig:
     data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
 
     hud_data = dict(data.get("hud", {}) or {})
-    ui_raw = data.get("ui")
-    if isinstance(ui_raw, dict):
-        ui_choice = ui_raw.get("backend")
-    else:
-        ui_choice = ui_raw
-    ui_choice = ui_choice or hud_data.pop("ui", None) or "tk"
+    ui_choice = data.get("ui") or hud_data.pop("ui", None) or "tk"
     hud = HudConfig(**hud_data)
-    ui = UiConfig(backend=str(ui_choice))
+    ui = UiConfig(choice=str(ui_choice))
     hotkeys = HotkeysConfig(**(data.get("hotkeys", {}) or {}))
     log_data = dict(data.get("log_integration", {}) or {})
     if log_data.get("start_patterns") is None:

@@ -25,22 +25,8 @@ def test_load_config_accepts_ui_in_hud(tmp_path: Path) -> None:
     cfg = load_config(cfg_path)
 
     assert cfg.hud.title == "Test HUD"
-    assert cfg.ui.backend == "qt"
+    assert cfg.ui.choice == "qt"
     assert not hasattr(cfg.hud, "ui")
-
-
-def test_load_config_accepts_ui_backend(tmp_path: Path) -> None:
-    cfg_path = _write_config(
-        tmp_path,
-        """
-        ui:
-          backend: "tk"
-        """,
-    )
-
-    cfg = load_config(cfg_path)
-
-    assert cfg.ui.backend == "tk"
 
 
 def test_build_style_from_config(tmp_path: Path) -> None:
