@@ -5,6 +5,8 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class HudStyle:
+    """Настройки внешнего вида HUD."""
+
     title: str
     width: int
     height: int
