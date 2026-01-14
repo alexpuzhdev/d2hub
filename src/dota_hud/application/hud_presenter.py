@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from ..domain.events import format_mmss
 from ..domain.macro_info import build_macro_lines
 from ..domain.scheduler import TickState
-from ..ui.view_models import HudViewModel
+from .models import HudState, WarningState
 
 
 @dataclass(frozen=True)
@@ -26,7 +26,8 @@ class HudPresenter:
         self,
         tick_state: TickState,
         warning_text: str | None = None,
-    ) -> HudViewModel:
+        warning_level: str | None = None,
+    ) -> HudState:
         """Собирает модель отображения для текущего состояния."""
         event_text = None
         if tick_state.now:
@@ -36,11 +37,6 @@ class HudPresenter:
             )
         if event_text is None:
             event_text = "NOW: —"
-
-        if warning_text:
-            now_text = "\n".join([warning_text, event_text])
-        else:
-            now_text = event_text
 
         next_text = "ДАЛЕЕ: —"
         if tick_state.next_event:
@@ -61,11 +57,12 @@ class HudPresenter:
         if macro_lines:
             after_text = "\n".join([after_text, "MACRO:", *macro_lines])
 
-        return HudViewModel(
+        return HudState(
             timer_text=format_mmss(tick_state.elapsed),
             now_text=event_text,
             next_text=next_text,
             after_text=after_text,
+            warning=WarningState(text=warning_text, level=warning_level),
         )
 
     def _format_items(self, items: list[str]) -> str:
