@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import List, Tuple
+from typing import List
 
 from ..domain.events import Bucket
 from ..domain.warning_windows import WarningWindow
@@ -56,5 +56,4 @@ class AppConfig:
     hotkeys: HotkeysConfig
     log_integration: LogIntegrationConfig
     buckets: List[Bucket]
-    danger_windows: List[Tuple[int, int, str]]
     windows: List[WarningWindow]
