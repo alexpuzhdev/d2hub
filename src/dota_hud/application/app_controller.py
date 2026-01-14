@@ -6,12 +6,13 @@ from typing import Optional
 
 from ..config.loader import load_config
 from ..config.models import AppConfig
+from ..domain.scheduler import Scheduler
 from ..domain.warning_windows import WarningWindowService
 from ..infrastructure.gsi_server import GSIServer, GSIState
 from ..infrastructure.hotkeys import Hotkeys
 from ..infrastructure.log_watcher import LogWatcher
-from ..domain.scheduler import Scheduler
-from ..ui.hud_tk import HudStyle, HudTk
+from ..ui.hud_style import HudStyle
+from .hud_port import HudPort
 from .hud_presenter import HudPresenter
 
 
@@ -37,10 +38,10 @@ class GsiStateStore:
 class AppController:
     """Координирует работу сервисов HUD."""
 
-    def __init__(self, config: AppConfig) -> None:
+    def __init__(self, config: AppConfig, hud: HudPort | None = None) -> None:
         """Создаёт контроллер приложения."""
         self._config = config
-        self._hud = HudTk(self._build_style(config))
+        self._hud = hud or self._build_hud(config)
         self._scheduler = Scheduler(config.buckets)
         self._warning_service = WarningWindowService()
         self._presenter = HudPresenter()
@@ -84,6 +85,11 @@ class AppController:
             font_size=config.hud.font_size,
             font_weight=config.hud.font_weight,
         )
+
+    def _build_hud(self, config: AppConfig) -> HudPort:
+        from ..ui.qt.hud_window import HudQt
+
+        return HudQt(self._build_style(config))
 
     def _build_log_watcher(self, config: AppConfig) -> LogWatcher | None:
         if not config.log_integration.enabled:
@@ -141,7 +147,7 @@ class AppController:
             view_model = self._presenter.build_view_model(tick_state)
 
             self._hud.set_timer(view_model.timer_text)
-            self._hud.set_warning(bool(warning_level))
+            self._hud.set_warning(warning_level)
 
             if view_model.now_text:
                 self._hud.set_now(view_model.now_text)

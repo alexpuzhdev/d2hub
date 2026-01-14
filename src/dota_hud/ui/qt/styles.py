@@ -7,16 +7,23 @@ from PySide6 import QtGui
 
 @dataclass(frozen=True)
 class HudColors:
-    background_normal: QtGui.QColor
-    background_warn: QtGui.QColor
+    """Цветовая палитра HUD."""
+
+    background_base: QtGui.QColor
     text_primary: QtGui.QColor
+    text_next: QtGui.QColor
     text_muted: QtGui.QColor
+    text_warning: QtGui.QColor
+    text_danger: QtGui.QColor
 
 
 def default_colors() -> HudColors:
+    """Возвращает палитру в стиле Dota+."""
     return HudColors(
-        background_normal=QtGui.QColor(11, 11, 11),
-        background_warn=QtGui.QColor(32, 16, 0),
-        text_primary=QtGui.QColor(255, 255, 255),
-        text_muted=QtGui.QColor(189, 189, 189),
+        background_base=QtGui.QColor(24, 32, 40),
+        text_primary=QtGui.QColor(233, 236, 240),
+        text_next=QtGui.QColor(217, 225, 235),
+        text_muted=QtGui.QColor(168, 176, 186),
+        text_warning=QtGui.QColor(233, 199, 129),
+        text_danger=QtGui.QColor(232, 156, 128),
     )

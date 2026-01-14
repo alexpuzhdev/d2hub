@@ -5,7 +5,7 @@ import sys
 
 from pathlib import Path
 
-from .app.app_controller import AppController
+from .application.app_controller import AppController
 
 
 def run_app(config_path: Path) -> None:
