@@ -5,12 +5,6 @@ hud:
   x: 30
   y: 30
   alpha: 0.80
-  ui: "tk"
-
-ui: "tk"
-
-ui:
-  backend: "tk"
 
 hotkeys:
   start: F8

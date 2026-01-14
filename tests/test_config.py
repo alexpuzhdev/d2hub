@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from dota_hud.config import load_config
+from dota_hud.config.loader import load_config
 from dota_hud.ui.hud_style import HudStyle
 
 
@@ -12,21 +12,19 @@ def _write_config(tmp_path: Path, text: str) -> Path:
     return cfg_path
 
 
-def test_load_config_accepts_ui_in_hud(tmp_path: Path) -> None:
+def test_load_config_defaults(tmp_path: Path) -> None:
     cfg_path = _write_config(
         tmp_path,
         """
         hud:
           title: "Test HUD"
-          ui: "qt"
         """,
     )
 
     cfg = load_config(cfg_path)
 
     assert cfg.hud.title == "Test HUD"
-    assert cfg.ui.choice == "qt"
-    assert not hasattr(cfg.hud, "ui")
+    assert cfg.hud.width > 0
 
 
 def test_build_style_from_config(tmp_path: Path) -> None:
