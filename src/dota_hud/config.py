@@ -23,6 +23,11 @@ class HudConfig:
 
 
 @dataclass(frozen=True)
+class UiConfig:
+    choice: str = "tk"
+
+
+@dataclass(frozen=True)
 class HotkeysConfig:
     start: str = "F8"
     stop: str = "F9"
@@ -54,6 +59,7 @@ class Window:
 @dataclass(frozen=True)
 class AppConfig:
     hud: HudConfig
+    ui: UiConfig
     hotkeys: HotkeysConfig
     log_integration: LogIntegrationConfig
     buckets: List[Bucket]
@@ -93,7 +99,10 @@ def _expand_rules(rules_raw: list[dict], map_: Dict[int, list[str]]) -> None:
 def load_config(path: Path) -> AppConfig:
     data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
 
-    hud = HudConfig(**(data.get("hud", {}) or {}))
+    hud_data = dict(data.get("hud", {}) or {})
+    ui_choice = data.get("ui") or hud_data.pop("ui", None) or "tk"
+    hud = HudConfig(**hud_data)
+    ui = UiConfig(choice=str(ui_choice))
     hotkeys = HotkeysConfig(**(data.get("hotkeys", {}) or {}))
     log_data = dict(data.get("log_integration", {}) or {})
     if log_data.get("start_patterns") is None:
@@ -138,6 +147,7 @@ def load_config(path: Path) -> AppConfig:
 
     return AppConfig(
         hud=hud,
+        ui=ui,
         hotkeys=hotkeys,
         log_integration=log_integration,
         buckets=buckets,

@@ -7,6 +7,8 @@ hud:
   alpha: 0.80
   ui: "tk"
 
+ui: "tk"
+
 hotkeys:
   start: F8
   stop: F9
