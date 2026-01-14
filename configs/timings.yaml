@@ -9,6 +9,9 @@ hud:
 
 ui: "tk"
 
+ui:
+  backend: "tk"
+
 hotkeys:
   start: F8
   stop: F9

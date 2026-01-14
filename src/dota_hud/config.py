@@ -28,6 +28,11 @@ class UiConfig:
 
 
 @dataclass(frozen=True)
+class UiConfig:
+    backend: str = "tk"
+
+
+@dataclass(frozen=True)
 class HotkeysConfig:
     start: str = "F8"
     stop: str = "F9"
