@@ -20,11 +20,3 @@ class HudState:
     next_text: str
     after_text: str
     warning: WarningState
-
-
-@dataclass(frozen=True)
-class GameStateSnapshot:
-    """Минимальный снимок состояния игры для use-case."""
-
-    clock_time: int | None
-    paused: bool
