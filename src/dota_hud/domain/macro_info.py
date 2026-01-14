@@ -19,17 +19,17 @@ class MacroTiming:
         if elapsed < self.first_spawn:
             return format_mmss(self.first_spawn - elapsed)
         if self.interval <= 0:
-            return "ГОТОВО"
+            return "UP"
         since_last = (elapsed - self.first_spawn) % self.interval
         if since_last <= self.up_window:
-            return "ГОТОВО"
+            return "UP"
         return format_mmss(self.interval - since_last)
 
 
 DEFAULT_MACRO_TIMINGS: tuple[MacroTiming, ...] = (
-    MacroTiming(name="Руна мудрости", first_spawn=7 * 60, interval=7 * 60, up_window=30),
-    MacroTiming(name="Активная руна", first_spawn=6 * 60, interval=2 * 60, up_window=30),
-    MacroTiming(name="Руна богатства", first_spawn=0, interval=3 * 60, up_window=30),
+    MacroTiming(name="Wisdom rune", first_spawn=7 * 60, interval=7 * 60, up_window=30),
+    MacroTiming(name="Power rune", first_spawn=6 * 60, interval=2 * 60, up_window=30),
+    MacroTiming(name="Bounty rune", first_spawn=0, interval=3 * 60, up_window=30),
 )
 
 

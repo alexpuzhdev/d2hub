@@ -22,16 +22,25 @@ class HudPresenter:
         """Создаёт форматтер текста HUD."""
         self._config = config or PresenterConfig()
 
-    def build_view_model(self, tick_state: TickState) -> HudViewModel:
+    def build_view_model(
+        self,
+        tick_state: TickState,
+        warning_text: str | None = None,
+    ) -> HudViewModel:
         """Собирает модель отображения для текущего состояния."""
         event_text = None
         if tick_state.now:
             event_text = (
-                f"СЕЙЧАС @ {format_mmss(tick_state.now.t)}\n"
+                f"NOW @ {format_mmss(tick_state.now.t)}\n"
                 f"{self._format_items(tick_state.now.items)}"
             )
         if event_text is None:
-            event_text = "СЕЙЧАС: —"
+            event_text = "NOW: —"
+
+        if warning_text:
+            now_text = "\n".join([warning_text, event_text])
+        else:
+            now_text = event_text
 
         next_text = "ДАЛЕЕ: —"
         if tick_state.next_event:
@@ -50,7 +59,7 @@ class HudPresenter:
 
         macro_lines = build_macro_lines(tick_state.elapsed)
         if macro_lines:
-            after_text = "\n".join([after_text, "МАКРО:", *macro_lines])
+            after_text = "\n".join([after_text, "MACRO:", *macro_lines])
 
         return HudViewModel(
             timer_text=format_mmss(tick_state.elapsed),

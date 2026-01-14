@@ -125,7 +125,7 @@ class AppController:
                 self._scheduler.set_external_elapsed(gsi_state.clock_time)
 
                 if gsi_state.paused:
-                    paused_status = "ПАУЗА (DOTA)"
+                    paused_status = "PAUSED (DOTA)"
 
             for action in self._hotkeys.drain():
                 if action == "stop":
@@ -143,24 +143,14 @@ class AppController:
                 self._config.windows,
             )
             warning_level = self._warning_service.warning_level(active_windows)
-            if active_windows:
-                window = active_windows[0]
-                level_labels = {
-                    "danger": "ОКНО: ОПАСНОСТЬ",
-                    "warn": "ОКНО: ВНИМАНИЕ",
-                    "info": "ОКНО: ИНФО",
-                }
-                header = level_labels.get(window.level, "ОКНО")
-                if window.text:
-                    warning_text = f"{header}\n{window.text}"
-                else:
-                    warning_text = header
-            else:
-                warning_text = None
-            view_model = self._presenter.build_view_model(tick_state)
+            warning_text = active_windows[0].text if active_windows else None
+            view_model = self._presenter.build_view_model(
+                tick_state,
+                warning_text=warning_text,
+            )
 
             self._hud.set_timer(view_model.timer_text)
-            self._hud.set_warning(warning_text, warning_level)
+            self._hud.set_warning(warning_level)
             self._hud.set_now(paused_status or view_model.now_text)
 
             self._hud.set_next(view_model.next_text)
