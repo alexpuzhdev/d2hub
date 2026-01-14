@@ -15,7 +15,7 @@ class HudConfig:
     ui: str = "qt"
     title: str = "Dota HUD"
     width: int = 560
-    height: int = 190
+    height: int = 840
     x: int = 30
     y: int = 30
     alpha: float = 0.92
