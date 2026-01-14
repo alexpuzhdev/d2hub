@@ -6,6 +6,7 @@ from typing import Dict
 import yaml
 
 from ..domain.events import Bucket, mmss_to_seconds
+from ..domain.macro_info import DEFAULT_MACRO_TIMINGS, MacroTiming
 from ..domain.warning_windows import WarningWindow
 from .models import AppConfig, HotkeysConfig, HudConfig, LogIntegrationConfig
 
@@ -39,6 +40,32 @@ def _expand_rules(rules_raw: list[dict], items_map: Dict[int, list[str]]) -> Non
             timestamp += every
 
 
+def _seconds_from_value(raw: object) -> int:
+    text = str(raw).strip()
+    if ":" in text:
+        return mmss_to_seconds(text)
+    return int(text)
+
+
+def _load_macro_timings(raw: list[dict] | None) -> list[MacroTiming]:
+    if not raw:
+        return list(DEFAULT_MACRO_TIMINGS)
+    timings: list[MacroTiming] = []
+    for item in raw:
+        name = str(item.get("name", "")).strip()
+        if not name:
+            continue
+        timings.append(
+            MacroTiming(
+                name=name,
+                first_spawn=_seconds_from_value(item.get("first_spawn", 0)),
+                interval=_seconds_from_value(item.get("interval", 0)),
+                up_window=_seconds_from_value(item.get("up_window", 0)),
+            )
+        )
+    return timings
+
+
 def load_config(path: Path) -> AppConfig:
     """Загружает конфигурацию из YAML файла."""
     data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
@@ -66,7 +93,6 @@ def load_config(path: Path) -> AppConfig:
     buckets.sort(key=lambda bucket: bucket.t)
 
     windows: list[WarningWindow] = []
-    danger_windows: list[tuple[int, int, str]] = []
     for window in (data.get("windows", []) or []):
         from_time = mmss_to_seconds(str(window["from"]))
         to_time = mmss_to_seconds(str(window["to"]))
@@ -90,7 +116,6 @@ def load_config(path: Path) -> AppConfig:
         text = str(window.get("text", "")).strip()
         if not text:
             continue
-        danger_windows.append((from_time, to_time, text))
         windows.append(
             WarningWindow(
                 from_t=from_time,
@@ -107,6 +132,6 @@ def load_config(path: Path) -> AppConfig:
         hotkeys=hotkeys,
         log_integration=log_integration,
         buckets=buckets,
-        danger_windows=danger_windows,
         windows=windows,
+        macro_timings=_load_macro_timings(data.get("macro_timings")),
     )
