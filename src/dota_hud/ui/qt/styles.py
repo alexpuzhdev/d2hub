@@ -13,6 +13,7 @@ class HudColors:
     text_primary: QtGui.QColor
     text_next: QtGui.QColor
     text_muted: QtGui.QColor
+    text_info: QtGui.QColor
     text_warning: QtGui.QColor
     text_danger: QtGui.QColor
 
@@ -32,10 +33,12 @@ def default_colors() -> HudColors:
         # приглушённый текст
         text_muted=QtGui.QColor(160, 168, 176),
 
-        # warning: золото
-        text_warning=QtGui.QColor(215, 185, 120),
+        # info: нейтральный светлый
+        text_info=QtGui.QColor(208, 208, 208),
 
-        # danger: приглушённый кирпично-красный
-        text_danger=QtGui.QColor(210, 135, 120),
+        # warning: тёплый жёлтый
+        text_warning=QtGui.QColor(255, 184, 77),
+
+        # danger: яркий красный
+        text_danger=QtGui.QColor(255, 77, 77),
     )
-

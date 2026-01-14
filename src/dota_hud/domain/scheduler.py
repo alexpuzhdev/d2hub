@@ -24,6 +24,8 @@ class Scheduler:
         """Создаёт планировщик с базовым списком событий."""
         self._base = list(buckets)
         self._external_elapsed: Optional[int] = None
+        self._current: Optional[Bucket] = None
+        self._last_elapsed = 0
         self.reset()
 
     def start(self) -> None:
@@ -31,6 +33,8 @@ class Scheduler:
         self._external_elapsed = None
         self._start_at = time.time()
         self._buckets = list(self._base)
+        self._current = None
+        self._last_elapsed = 0
 
     def stop(self) -> None:
         """Останавливает ручной таймер."""
@@ -41,6 +45,8 @@ class Scheduler:
         self._start_at = None
         self._external_elapsed = None
         self._buckets = list(self._base)
+        self._current = None
+        self._last_elapsed = 0
 
     @property
     def is_running(self) -> bool:
@@ -49,8 +55,12 @@ class Scheduler:
 
     def set_external_elapsed(self, seconds: int) -> None:
         """Устанавливает текущее игровое время извне (GSI)."""
+        if seconds < self.elapsed():
+            self._buckets = list(self._base)
+            self._current = None
         if self._external_elapsed is None:
             self._buckets = list(self._base)
+            self._current = None
         self._external_elapsed = max(0, int(seconds))
         self._start_at = None
 
@@ -73,11 +83,15 @@ class Scheduler:
             after_event = self._buckets[1] if len(self._buckets) > 1 else None
             return TickState(0, None, next_event, after_event)
 
-        now = None
+        if elapsed < self._last_elapsed:
+            self._buckets = list(self._base)
+            self._current = None
+
         while self._buckets and self._buckets[0].t <= elapsed:
-            now = self._buckets.pop(0)
+            self._current = self._buckets.pop(0)
 
         next_event = self._buckets[0] if self._buckets else None
         after_event = self._buckets[1] if len(self._buckets) > 1 else None
+        self._last_elapsed = elapsed
 
-        return TickState(elapsed, now, next_event, after_event)
+        return TickState(elapsed, self._current, next_event, after_event)

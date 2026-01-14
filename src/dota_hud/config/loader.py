@@ -65,16 +65,8 @@ def load_config(path: Path) -> AppConfig:
     buckets = [Bucket(t=timestamp, items=items) for timestamp, items in buckets_map.items()]
     buckets.sort(key=lambda bucket: bucket.t)
 
-    danger_windows: list[tuple[int, int, str]] = []
-    for window in (data.get("danger_windows", []) or []):
-        from_time = mmss_to_seconds(str(window["from"]))
-        to_time = mmss_to_seconds(str(window["to"]))
-        text = str(window.get("text", "")).strip()
-        if not text:
-            continue
-        danger_windows.append((from_time, to_time, text))
-
     windows: list[WarningWindow] = []
+    danger_windows: list[tuple[int, int, str]] = []
     for window in (data.get("windows", []) or []):
         from_time = mmss_to_seconds(str(window["from"]))
         to_time = mmss_to_seconds(str(window["to"]))
@@ -90,6 +82,22 @@ def load_config(path: Path) -> AppConfig:
                 text=text,
                 level=level,
                 priority=priority,
+            )
+        )
+    for window in (data.get("danger_windows", []) or []):
+        from_time = mmss_to_seconds(str(window["from"]))
+        to_time = mmss_to_seconds(str(window["to"]))
+        text = str(window.get("text", "")).strip()
+        if not text:
+            continue
+        danger_windows.append((from_time, to_time, text))
+        windows.append(
+            WarningWindow(
+                from_t=from_time,
+                to_t=to_time,
+                text=text,
+                level="danger",
+                priority=100,
             )
         )
     windows.sort(key=lambda window: window.from_t)
