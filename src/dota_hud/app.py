@@ -8,7 +8,8 @@ from .events import format_mmss
 from .hotkeys import Hotkeys, HotkeysConfig
 from .log_watcher import LogWatcher
 from .scheduler import Scheduler
-from .ui.hud_tk import HudStyle, HudTk
+from .ui import create_hud
+from .ui.hud_style import HudStyle
 from .gsi_server import GSIServer, GSIState
 
 
@@ -47,7 +48,7 @@ def run_app(config_path: Path) -> None:
         font_weight=cfg.hud.font_weight,
     )
 
-    hud = HudTk(style)
+    hud = create_hud(style, cfg.ui.choice)
     scheduler = Scheduler(cfg.buckets)
 
     watcher = None
