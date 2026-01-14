@@ -12,6 +12,7 @@ keyboard = "^0.13.5"
 PySide6 = "^6.7.0"
 pyyaml = "^6.0.2"
 
+
 [tool.poetry.scripts]
 dota-hud = "dota_hud.__main__:main"
 

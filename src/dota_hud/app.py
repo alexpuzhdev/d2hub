@@ -48,7 +48,7 @@ def run_app(config_path: Path) -> None:
         font_weight=cfg.hud.font_weight,
     )
 
-    hud = create_hud(style, cfg.ui.choice)
+    hud = create_hud(style, cfg.hud.ui)
     scheduler = Scheduler(cfg.buckets)
 
     watcher = None
