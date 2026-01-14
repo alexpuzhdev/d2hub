@@ -19,17 +19,12 @@ class HudConfig:
     font_family: str = "Segoe UI"
     font_size: int = 15
     font_weight: str = "bold"
-    ui: str = "tk"
-
-
-@dataclass(frozen=True)
-class UiConfig:
-    choice: str = "tk"
 
 
 @dataclass(frozen=True)
 class UiConfig:
     backend: str = "tk"
+    allow_tk_fallback: bool = False
 
 
 @dataclass(frozen=True)
@@ -105,9 +100,18 @@ def load_config(path: Path) -> AppConfig:
     data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
 
     hud_data = dict(data.get("hud", {}) or {})
-    ui_choice = data.get("ui") or hud_data.pop("ui", None) or "tk"
+    ui_from_hud = hud_data.pop("ui", None)
     hud = HudConfig(**hud_data)
-    ui = UiConfig(choice=str(ui_choice))
+    raw_ui = data.get("ui", None)
+    allow_tk_fallback = False
+    if isinstance(raw_ui, dict):
+        ui_backend = raw_ui.get("backend") or raw_ui.get("choice") or "tk"
+        allow_tk_fallback = bool(raw_ui.get("allow_tk_fallback", False))
+    elif raw_ui is not None:
+        ui_backend = raw_ui
+    else:
+        ui_backend = ui_from_hud or "tk"
+    ui = UiConfig(backend=str(ui_backend), allow_tk_fallback=allow_tk_fallback)
     hotkeys = HotkeysConfig(**(data.get("hotkeys", {}) or {}))
     log_data = dict(data.get("log_integration", {}) or {})
     if log_data.get("start_patterns") is None:

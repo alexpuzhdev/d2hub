@@ -23,6 +23,14 @@ class HudConfig:
 
 
 @dataclass(frozen=True)
+class UiConfig:
+    """Настройки UI backend."""
+
+    backend: str = "tk"
+    allow_tk_fallback: bool = False
+
+
+@dataclass(frozen=True)
 class HotkeysConfig:
     """Настройки горячих клавиш."""
 
@@ -53,6 +61,7 @@ class AppConfig:
     """Сводная конфигурация приложения HUD."""
 
     hud: HudConfig
+    ui: UiConfig
     hotkeys: HotkeysConfig
     log_integration: LogIntegrationConfig
     buckets: List[Bucket]

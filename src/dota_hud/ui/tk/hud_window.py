@@ -5,7 +5,9 @@ import threading
 import tkinter as tk
 from typing import Callable, Optional
 
-from .hud_style import HudStyle
+from ..base import HudBase
+from ..hud_style import HudStyle
+from .app import TkApp
 
 if sys.platform == "win32":
     import ctypes
@@ -29,7 +31,7 @@ if sys.platform == "win32":
     SetWindowPos.argtypes = [
         wintypes.HWND, wintypes.HWND,
         wintypes.INT, wintypes.INT, wintypes.INT, wintypes.INT,
-        wintypes.UINT
+        wintypes.UINT,
     ]
     SetWindowPos.restype = wintypes.BOOL
 
@@ -38,9 +40,10 @@ if sys.platform == "win32":
     RedrawWindow.restype = wintypes.BOOL
 
 
-class HudTk:
-    def __init__(self, style: HudStyle) -> None:
-        self.root = tk.Tk()
+class HudTk(HudBase):
+    def __init__(self, style: HudStyle, app: TkApp | None = None) -> None:
+        self._app = app or TkApp()
+        self.root = self._app.root
 
         # Без рамки
         self.root.overrideredirect(True)
@@ -76,7 +79,8 @@ class HudTk:
         self.timer = tk.Label(
             self.top,
             text="0:00",
-            fg=self.fg, bg=self.bg_normal,
+            fg=self.fg,
+            bg=self.bg_normal,
             font=(style.font_family, style.font_size + 10, "bold"),
             anchor="w",
         )
@@ -85,7 +89,8 @@ class HudTk:
         self.now = tk.Label(
             self.top,
             text="READY  |  F8 START  F9 STOP  F10 RESET  F7 LOCK",
-            fg=self.muted, bg=self.bg_normal,
+            fg=self.muted,
+            bg=self.bg_normal,
             font=(style.font_family, style.font_size, style.font_weight),
             justify="left",
             anchor="w",
@@ -96,7 +101,8 @@ class HudTk:
         self.next = tk.Label(
             self.top,
             text="NEXT: —",
-            fg=self.fg, bg=self.bg_normal,
+            fg=self.fg,
+            bg=self.bg_normal,
             font=(style.font_family, style.font_size, style.font_weight),
             justify="left",
             anchor="w",
@@ -107,7 +113,8 @@ class HudTk:
         self.after = tk.Label(
             self.top,
             text="AFTER: —",
-            fg=self.muted, bg=self.bg_normal,
+            fg=self.muted,
+            bg=self.bg_normal,
             font=(style.font_family, style.font_size - 1, "normal"),
             justify="left",
             anchor="w",
@@ -216,8 +223,8 @@ class HudTk:
         RedrawWindow(hwnd, None, None, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN)
 
     # ---------------- UI setters ----------------
-    def set_warning(self, is_warn: bool) -> None:
-        bg = self.bg_warn if is_warn else self.bg_normal
+    def set_warning(self, is_warn: bool | str) -> None:
+        bg = self.bg_warn if bool(is_warn) else self.bg_normal
         self.root.configure(bg=bg)
         for w in (self.top, self.timer, self.now, self.next, self.after):
             w.configure(bg=bg)
@@ -244,10 +251,7 @@ class HudTk:
         self.root.protocol("WM_DELETE_WINDOW", handler)
 
     def run(self) -> None:
-        self.root.mainloop()
+        self._app.run()
 
     def close(self) -> None:
-        try:
-            self.root.destroy()
-        except Exception:
-            pass
+        self._app.close()
