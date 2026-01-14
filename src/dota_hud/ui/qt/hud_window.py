@@ -24,6 +24,8 @@ class HudQt(QtWidgets.QWidget):
         self._warning_level = ""
         self._warning_blink_left = 0
         self._warning_flash_visible = False
+        self._warning_overlay_alpha = 0
+        self._macro_overlay_visible = False
         self._locked = False
         self._drag_enabled = True
         self._drag_offset = QtCore.QPoint()
@@ -128,6 +130,12 @@ class HudQt(QtWidgets.QWidget):
         else:
             warning_color = self._colors.text_primary
         self.warning.setStyleSheet(self._label_style(warning_color))
+        self._warning_overlay_alpha = 0
+        if self._warning_level == "danger":
+            self._warning_overlay_alpha = 90
+        elif self._warning_level == "warn":
+            self._warning_overlay_alpha = 70
+        self._macro_overlay_visible = self.after.isVisible()
 
     def paintEvent(self, event: QtGui.QPaintEvent) -> None:
         painter = QtGui.QPainter(self)
@@ -165,50 +173,19 @@ class HudQt(QtWidgets.QWidget):
 
         painter.fillRect(rect, gradient)
 
-        if self._warning_flash_visible:
-            flash_color = None
-            if self._warning_level == "danger":
-                flash_color = self._colors.text_danger
-            elif self._warning_level == "warn":
-                flash_color = self._colors.text_warning
-
+        if self._warning_overlay_alpha > 0:
+            flash_color = self._warning_flash_color()
             if flash_color:
                 warning_rect = self.warning.geometry()
-                overlay = QtGui.QLinearGradient(
-                    warning_rect.left(),
-                    0,
-                    warning_rect.right(),
-                    0,
-                )
-                overlay_alpha = 120
-                overlay.setColorAt(
-                    0.0,
-                    QtGui.QColor(
-                        flash_color.red(),
-                        flash_color.green(),
-                        flash_color.blue(),
-                        overlay_alpha,
-                    ),
-                )
-                overlay.setColorAt(
-                    0.7,
-                    QtGui.QColor(
-                        flash_color.red(),
-                        flash_color.green(),
-                        flash_color.blue(),
-                        int(overlay_alpha * 0.35),
-                    ),
-                )
-                overlay.setColorAt(
-                    1.0,
-                    QtGui.QColor(
-                        flash_color.red(),
-                        flash_color.green(),
-                        flash_color.blue(),
-                        0,
-                    ),
-                )
-                painter.fillRect(warning_rect, overlay)
+                overlay_alpha = self._warning_overlay_alpha
+                if self._warning_flash_visible:
+                    overlay_alpha = min(200, overlay_alpha + 80)
+                self._draw_overlay(painter, warning_rect, flash_color, overlay_alpha)
+
+        if self._macro_overlay_visible:
+            macro_rect = self.after.geometry()
+            if not macro_rect.isNull():
+                self._draw_overlay(painter, macro_rect, self._colors.text_macro, 60)
         painter.end()
 
     def _set_clickthrough(self, enabled: bool) -> None:
@@ -281,17 +258,34 @@ class HudQt(QtWidgets.QWidget):
         QtCore.QTimer.singleShot(150, self._blink_warning)
         self.update()
 
-    def _start_warning_blink(self) -> None:
-        self._warning_blink_left = 4
-        self._blink_warning()
+    def _warning_flash_color(self) -> QtGui.QColor | None:
+        if self._warning_level == "danger":
+            return self._colors.text_danger
+        if self._warning_level == "warn":
+            return self._colors.text_warning
+        return None
 
-    def _blink_warning(self) -> None:
-        if self._warning_blink_left <= 0:
-            self.warning.setVisible(True)
-            return
-        self.warning.setVisible(not self.warning.isVisible())
-        self._warning_blink_left -= 1
-        QtCore.QTimer.singleShot(150, self._blink_warning)
+    @staticmethod
+    def _draw_overlay(
+        painter: QtGui.QPainter,
+        rect: QtCore.QRect,
+        color: QtGui.QColor,
+        alpha: int,
+    ) -> None:
+        overlay = QtGui.QLinearGradient(rect.left(), 0, rect.right(), 0)
+        overlay.setColorAt(
+            0.0,
+            QtGui.QColor(color.red(), color.green(), color.blue(), alpha),
+        )
+        overlay.setColorAt(
+            0.7,
+            QtGui.QColor(color.red(), color.green(), color.blue(), int(alpha * 0.35)),
+        )
+        overlay.setColorAt(
+            1.0,
+            QtGui.QColor(color.red(), color.green(), color.blue(), 0),
+        )
+        painter.fillRect(rect, overlay)
 
     def set_timer(self, text: str) -> None:
         """Обновляет текст таймера."""
@@ -309,6 +303,7 @@ class HudQt(QtWidgets.QWidget):
         """Обновляет блок AFTER."""
         self.after.setText(text)
         self.after.setVisible(bool(text))
+        self._macro_overlay_visible = bool(text)
 
     def every(self, ms: int, fn: Callable[[], None]) -> None:
         """Планирует повторный вызов функции через заданный интервал."""
