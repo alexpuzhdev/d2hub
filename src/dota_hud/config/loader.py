@@ -66,7 +66,6 @@ def load_config(path: Path) -> AppConfig:
     buckets.sort(key=lambda bucket: bucket.t)
 
     windows: list[WarningWindow] = []
-    danger_windows: list[tuple[int, int, str]] = []
     for window in (data.get("windows", []) or []):
         from_time = mmss_to_seconds(str(window["from"]))
         to_time = mmss_to_seconds(str(window["to"]))
@@ -90,7 +89,6 @@ def load_config(path: Path) -> AppConfig:
         text = str(window.get("text", "")).strip()
         if not text:
             continue
-        danger_windows.append((from_time, to_time, text))
         windows.append(
             WarningWindow(
                 from_t=from_time,
@@ -107,6 +105,5 @@ def load_config(path: Path) -> AppConfig:
         hotkeys=hotkeys,
         log_integration=log_integration,
         buckets=buckets,
-        danger_windows=danger_windows,
         windows=windows,
     )
