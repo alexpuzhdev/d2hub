@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from ..domain.events import format_mmss
-from ..domain.macro_info import build_macro_lines
+from ..domain.macro_info import DEFAULT_MACRO_TIMINGS, MacroTiming, build_macro_lines
 from ..domain.scheduler import TickState
 from .models import HudState, WarningState
 
@@ -13,6 +13,7 @@ class PresenterConfig:
     """Настройки отображения текстовых блоков."""
 
     max_lines: int = 2
+    macro_timings: tuple[MacroTiming, ...] = DEFAULT_MACRO_TIMINGS
 
 
 class HudPresenter:
@@ -53,7 +54,7 @@ class HudPresenter:
                 f"{self._format_items(tick_state.after_event.items)}"
             )
 
-        macro_lines = build_macro_lines(tick_state.elapsed)
+        macro_lines = build_macro_lines(tick_state.elapsed, self._config.macro_timings)
         if macro_lines:
             after_text = "\n".join([after_text, "MACRO:", *macro_lines])
 

@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from typing import List
 
 from ..domain.events import Bucket
+from ..domain.macro_info import MacroTiming
 from ..domain.warning_windows import WarningWindow
 
 
@@ -57,3 +58,4 @@ class AppConfig:
     log_integration: LogIntegrationConfig
     buckets: List[Bucket]
     windows: List[WarningWindow]
+    macro_timings: List[MacroTiming]

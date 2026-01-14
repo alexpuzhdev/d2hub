@@ -14,7 +14,7 @@ from ..infrastructure.log_watcher import LogWatcher
 from ..ui.hud_style import HudStyle
 from .commands import HudAction
 from .hud_port import HudPort
-from .hud_presenter import HudPresenter
+from .hud_presenter import HudPresenter, PresenterConfig
 from .models import GameStateSnapshot
 from .use_cases import HudCycleUseCase
 
@@ -47,7 +47,9 @@ class AppController:
         self._hud = hud or self._build_hud(config)
         self._scheduler = Scheduler(config.buckets)
         self._warning_service = WarningWindowService()
-        self._presenter = HudPresenter()
+        self._presenter = HudPresenter(
+            PresenterConfig(macro_timings=tuple(self._config.macro_timings))
+        )
         self._cycle = HudCycleUseCase(
             scheduler=self._scheduler,
             warning_service=self._warning_service,

@@ -6,6 +6,7 @@ from typing import Dict
 import yaml
 
 from ..domain.events import Bucket, mmss_to_seconds
+from ..domain.macro_info import DEFAULT_MACRO_TIMINGS, MacroTiming
 from ..domain.warning_windows import WarningWindow
 from .models import AppConfig, HotkeysConfig, HudConfig, LogIntegrationConfig
 
@@ -37,6 +38,32 @@ def _expand_rules(rules_raw: list[dict], items_map: Dict[int, list[str]]) -> Non
         while timestamp <= until:
             _merge_into(items_map, timestamp, items)
             timestamp += every
+
+
+def _seconds_from_value(raw: object) -> int:
+    text = str(raw).strip()
+    if ":" in text:
+        return mmss_to_seconds(text)
+    return int(text)
+
+
+def _load_macro_timings(raw: list[dict] | None) -> list[MacroTiming]:
+    if not raw:
+        return list(DEFAULT_MACRO_TIMINGS)
+    timings: list[MacroTiming] = []
+    for item in raw:
+        name = str(item.get("name", "")).strip()
+        if not name:
+            continue
+        timings.append(
+            MacroTiming(
+                name=name,
+                first_spawn=_seconds_from_value(item.get("first_spawn", 0)),
+                interval=_seconds_from_value(item.get("interval", 0)),
+                up_window=_seconds_from_value(item.get("up_window", 0)),
+            )
+        )
+    return timings
 
 
 def load_config(path: Path) -> AppConfig:
@@ -106,4 +133,5 @@ def load_config(path: Path) -> AppConfig:
         log_integration=log_integration,
         buckets=buckets,
         windows=windows,
+        macro_timings=_load_macro_timings(data.get("macro_timings")),
     )
