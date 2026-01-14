@@ -12,6 +12,7 @@ from ..infrastructure.gsi_server import GSIServer, GSIState
 from ..infrastructure.hotkeys import Hotkeys
 from ..infrastructure.log_watcher import LogWatcher
 from ..ui.hud_style import HudStyle
+from .commands import HudAction
 from .hud_port import HudPort
 from .hud_presenter import HudPresenter
 from .models import GameStateSnapshot
@@ -137,9 +138,9 @@ class AppController:
             )
 
             actions = self._hotkeys.drain()
-            if "lock" in actions:
+            if HudAction.LOCK in actions:
                 self._hud.toggle_lock()
-            cycle_actions = [action for action in actions if action != "lock"]
+            cycle_actions = [action for action in actions if action is not HudAction.LOCK]
             cycle = self._cycle.run(game_state, cycle_actions)
             view_model = cycle.hud_state
 

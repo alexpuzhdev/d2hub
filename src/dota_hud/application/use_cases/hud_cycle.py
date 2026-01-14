@@ -7,6 +7,7 @@ __all__ = ["HudCycleResult", "HudCycleUseCase"]
 
 from ...domain.scheduler import Scheduler
 from ...domain.warning_windows import WarningWindow, WarningWindowService
+from ..commands import HudAction
 from ..hud_presenter import HudPresenter
 from ..models import HudState
 from ..models import GameStateSnapshot
@@ -39,7 +40,7 @@ class HudCycleUseCase:
     def run(
         self,
         gsi_state: GameStateSnapshot | None,
-        actions: Iterable[str],
+        actions: Iterable[HudAction],
     ) -> HudCycleResult:
         """Обновляет тайминги и возвращает состояние HUD."""
         paused_status = None
@@ -51,11 +52,11 @@ class HudCycleUseCase:
                 paused_status = "PAUSED (DOTA)"
 
         for action in actions:
-            if action == "stop":
+            if action is HudAction.STOP:
                 self._scheduler.stop()
-            elif action == "reset":
+            elif action is HudAction.RESET:
                 self._scheduler.reset()
-            elif action == "start":
+            elif action is HudAction.START:
                 self._scheduler.start()
 
         tick_state = self._scheduler.tick()
