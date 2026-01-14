@@ -7,6 +7,7 @@ from typing import Optional
 from ..config.models import AppConfig
 from ..infrastructure.gsi_server import GSIServer, GSIState
 from ..infrastructure.hotkeys import Hotkeys
+from ..infrastructure.null_hotkeys import NullHotkeys
 from ..infrastructure.log_watcher import LogWatcher
 from .ports import GsiServerPort, HotkeysPort, LogWatcherPort
 
@@ -47,7 +48,9 @@ class InfraProvider:
         """Собирает инфраструктурные сервисы."""
         gsi_state_store = GsiStateStore()
         gsi_server = GSIServer(on_update=gsi_state_store.update)
-        hotkeys = Hotkeys(config.hotkeys)
+        hotkeys = (
+            Hotkeys(config.hotkeys) if config.hotkeys.enabled else NullHotkeys()
+        )
         log_watcher = self._build_log_watcher(config)
 
         return InfraServices(
