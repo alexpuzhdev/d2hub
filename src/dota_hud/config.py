@@ -19,6 +19,7 @@ class HudConfig:
     font_family: str = "Segoe UI"
     font_size: int = 15
     font_weight: str = "bold"
+    ui: str = "tk"
 
 
 @dataclass(frozen=True)
