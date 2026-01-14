@@ -14,6 +14,8 @@ from ..infrastructure.log_watcher import LogWatcher
 from ..ui.hud_style import HudStyle
 from .hud_port import HudPort
 from .hud_presenter import HudPresenter
+from .models import GameStateSnapshot
+from .use_cases import HudCycleUseCase
 
 
 class GsiStateStore:
@@ -45,6 +47,12 @@ class AppController:
         self._scheduler = Scheduler(config.buckets)
         self._warning_service = WarningWindowService()
         self._presenter = HudPresenter()
+        self._cycle = HudCycleUseCase(
+            scheduler=self._scheduler,
+            warning_service=self._warning_service,
+            presenter=self._presenter,
+            windows=self._config.windows,
+        )
 
         self._gsi_state_store = GsiStateStore()
         self._gsi_server = GSIServer(on_update=self._gsi_state_store.update)
@@ -149,6 +157,13 @@ class AppController:
                 warning_text=warning_text,
                 warning_level=warning_level,
             )
+
+            actions = self._hotkeys.drain()
+            if "lock" in actions:
+                self._hud.toggle_lock()
+            cycle_actions = [action for action in actions if action != "lock"]
+            cycle = self._cycle.run(game_state, cycle_actions)
+            view_model = cycle.hud_state
 
             self._hud.set_timer(view_model.timer_text)
             self._hud.set_warning(view_model.warning.text, view_model.warning.level)
