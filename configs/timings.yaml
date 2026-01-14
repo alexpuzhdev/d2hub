@@ -4,7 +4,7 @@ hud:
   height: 400
   x: 30
   y: 30
-  alpha: 0.80
+  alpha: 0.60
 
 hotkeys:
   start: F8
