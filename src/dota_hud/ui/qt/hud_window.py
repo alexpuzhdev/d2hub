@@ -19,6 +19,12 @@ class HudQt(QtWidgets.QWidget):
 
         super().__init__()
 
+        self._instance_guard = QtCore.QSharedMemory("dota_hud_singleton")
+        if self._instance_guard.attach():
+            raise RuntimeError("HUD instance is already running.")
+        if not self._instance_guard.create(1):
+            raise RuntimeError("Failed to acquire HUD instance lock.")
+
         self._style = style
         self._colors = default_colors()
         self._warning_level = ""
