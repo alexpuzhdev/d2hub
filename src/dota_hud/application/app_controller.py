@@ -119,14 +119,13 @@ class AppController:
 
         try:
             gsi_state = self._gsi_state_store.get()
+            paused_status = None
 
             if gsi_state and gsi_state.clock_time is not None:
                 self._scheduler.set_external_elapsed(gsi_state.clock_time)
 
                 if gsi_state.paused:
-                    self._hud.set_now("PAUSED (DOTA)")
-                else:
-                    self._hud.set_now("SYNCED WITH DOTA")
+                    paused_status = "PAUSED (DOTA)"
 
             for action in self._hotkeys.drain():
                 if action == "stop":
@@ -144,13 +143,15 @@ class AppController:
                 self._config.windows,
             )
             warning_level = self._warning_service.warning_level(active_windows)
-            view_model = self._presenter.build_view_model(tick_state)
+            warning_text = active_windows[0].text if active_windows else None
+            view_model = self._presenter.build_view_model(
+                tick_state,
+                warning_text=warning_text,
+            )
 
             self._hud.set_timer(view_model.timer_text)
             self._hud.set_warning(warning_level)
-
-            if view_model.now_text:
-                self._hud.set_now(view_model.now_text)
+            self._hud.set_now(paused_status or view_model.now_text)
 
             self._hud.set_next(view_model.next_text)
             self._hud.set_after(view_model.after_text)

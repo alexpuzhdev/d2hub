@@ -8,6 +8,6 @@ class HudViewModel:
     """Готовые тексты для отображения в HUD."""
 
     timer_text: str
-    now_text: str | None
+    now_text: str
     next_text: str
     after_text: str
