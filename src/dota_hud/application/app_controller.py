@@ -16,6 +16,7 @@ from .commands import HudAction
 from .hud_port import HudPort
 from .hud_presenter import HudPresenter, PresenterConfig
 from .models import GameStateSnapshot
+from .ports import GsiServerPort, HotkeysPort, LogWatcherPort
 from .use_cases import HudCycleUseCase
 
 
@@ -59,10 +60,10 @@ class AppController:
         )
 
         self._gsi_state_store = GsiStateStore()
-        self._gsi_server = GSIServer(on_update=self._gsi_state_store.update)
+        self._gsi_server: GsiServerPort = GSIServer(on_update=self._gsi_state_store.update)
 
-        self._hotkeys = Hotkeys(config.hotkeys)
-        self._log_watcher = self._build_log_watcher(config)
+        self._hotkeys: HotkeysPort = Hotkeys(config.hotkeys)
+        self._log_watcher: LogWatcherPort | None = self._build_log_watcher(config)
 
         self._hud.set_on_close(self._on_close)
 
@@ -88,7 +89,7 @@ class AppController:
     def _build_hud(self, config: AppConfig) -> HudPort:
         return self._ui_factory.build(config.hud)
 
-    def _build_log_watcher(self, config: AppConfig) -> LogWatcher | None:
+    def _build_log_watcher(self, config: AppConfig) -> LogWatcherPort | None:
         if not config.log_integration.enabled:
             return None
         return LogWatcher(

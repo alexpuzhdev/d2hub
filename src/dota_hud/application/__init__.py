@@ -3,6 +3,7 @@
 from .app_controller import AppController
 from .commands import HudAction
 from .models import GameStateSnapshot, HudState, WarningState
+from .ports import GsiServerPort, HotkeysPort, LogWatcherPort
 from .use_cases import HudCycleResult, HudCycleUseCase
 
 __all__ = [
@@ -12,5 +13,8 @@ __all__ = [
     "HudCycleResult",
     "HudCycleUseCase",
     "HudAction",
+    "GsiServerPort",
+    "HotkeysPort",
+    "LogWatcherPort",
     "WarningState",
 ]
