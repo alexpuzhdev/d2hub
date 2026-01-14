@@ -67,18 +67,14 @@ class HudQt(QtWidgets.QWidget):
         self.next = QtWidgets.QLabel("ДАЛЕЕ: —")
         self._configure_block_label(self.next, self._style.font_size)
 
-        self.after = QtWidgets.QLabel("ПОТОМ: —")
-        self._configure_block_label(
-            self.after,
-            self._style.font_size,
-            weight="normal",
-        )
+        self.after = QtWidgets.QLabel("")
+        self._configure_block_label(self.after, self._style.font_size)
+        self.after.setVisible(False)
 
         layout.addWidget(self.timer)
         layout.addWidget(self.warning)
         layout.addWidget(self.now)
         layout.addWidget(self.next)
-        layout.addWidget(self.after)
         layout.addStretch(1)
 
         self.setLayout(layout)
@@ -138,7 +134,7 @@ class HudQt(QtWidgets.QWidget):
         rect = self.rect()
 
         base = QtGui.QColor(self._colors.background_base)
-        max_alpha = int(255 * 0.45)  # стартовая прозрачность
+        max_alpha = int(255 * 0.6)  # стартовая прозрачность
 
         gradient = QtGui.QLinearGradient(
             rect.left(),
@@ -156,7 +152,7 @@ class HudQt(QtWidgets.QWidget):
         # середина — уже почти нет
         gradient.setColorAt(
             0.7,
-            QtGui.QColor(base.red(), base.green(), base.blue(), int(max_alpha * 0.15)),
+            QtGui.QColor(base.red(), base.green(), base.blue(), int(max_alpha * 0.3)),
         )
 
         # справа — НОЛЬ
