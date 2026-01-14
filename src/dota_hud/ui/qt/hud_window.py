@@ -41,6 +41,14 @@ class HudQt(QtWidgets.QWidget):
         self._configure_window()
         self._build_layout()
         self._apply_text_colors()
+        self._close_extra_windows()
+
+    def _close_extra_windows(self) -> None:
+        for widget in QtWidgets.QApplication.topLevelWidgets():
+            if widget is self:
+                continue
+            if isinstance(widget, QtWidgets.QWidget):
+                widget.close()
 
     def _configure_window(self) -> None:
         self.setWindowTitle(self._style.title)
