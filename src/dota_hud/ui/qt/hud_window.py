@@ -281,6 +281,18 @@ class HudQt(QtWidgets.QWidget):
         QtCore.QTimer.singleShot(150, self._blink_warning)
         self.update()
 
+    def _start_warning_blink(self) -> None:
+        self._warning_blink_left = 4
+        self._blink_warning()
+
+    def _blink_warning(self) -> None:
+        if self._warning_blink_left <= 0:
+            self.warning.setVisible(True)
+            return
+        self.warning.setVisible(not self.warning.isVisible())
+        self._warning_blink_left -= 1
+        QtCore.QTimer.singleShot(150, self._blink_warning)
+
     def set_timer(self, text: str) -> None:
         """Обновляет текст таймера."""
         self.timer.setText(text)
