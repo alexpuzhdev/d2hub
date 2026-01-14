@@ -66,8 +66,6 @@ def _load_macro_timings(raw: list[dict] | None) -> list[MacroTiming]:
 def map_config(data: dict) -> AppConfig:
     """Преобразует словарь YAML в конфигурацию приложения."""
     hud_data = dict(data.get("hud", {}) or {})
-    hud_data.pop("ui", None)
-    data.pop("ui", None)
     hud = HudConfig(**hud_data)
     hotkeys = HotkeysConfig(**(data.get("hotkeys", {}) or {}))
     log_data = dict(data.get("log_integration", {}) or {})

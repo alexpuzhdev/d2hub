@@ -12,6 +12,7 @@ from ..domain.warning_windows import WarningWindow
 class HudConfig:
     """Настройки отображения HUD."""
 
+    ui: str = "qt"
     title: str = "Dota HUD"
     width: int = 560
     height: int = 190

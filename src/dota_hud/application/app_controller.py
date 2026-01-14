@@ -11,7 +11,7 @@ from ..domain.warning_windows import WarningWindowService
 from ..infrastructure.gsi_server import GSIServer, GSIState
 from ..infrastructure.hotkeys import Hotkeys
 from ..infrastructure.log_watcher import LogWatcher
-from ..ui.hud_style import HudStyle
+from ..ui.factory import UiFactory
 from .commands import HudAction
 from .hud_port import HudPort
 from .hud_presenter import HudPresenter, PresenterConfig
@@ -44,6 +44,7 @@ class AppController:
     def __init__(self, config: AppConfig, hud: HudPort | None = None) -> None:
         """Создаёт контроллер приложения."""
         self._config = config
+        self._ui_factory = UiFactory()
         self._hud = hud or self._build_hud(config)
         self._scheduler = Scheduler(config.buckets)
         self._warning_service = WarningWindowService()
@@ -84,23 +85,8 @@ class AppController:
         """Создаёт контроллер из конфигурационного файла."""
         return AppController(load_config(config_path))
 
-    def _build_style(self, config: AppConfig) -> HudStyle:
-        return HudStyle(
-            title=config.hud.title,
-            width=config.hud.width,
-            height=config.hud.height,
-            x=config.hud.x,
-            y=config.hud.y,
-            alpha=config.hud.alpha,
-            font_family=config.hud.font_family,
-            font_size=config.hud.font_size,
-            font_weight=config.hud.font_weight,
-        )
-
     def _build_hud(self, config: AppConfig) -> HudPort:
-        from ..ui.qt.hud_window import HudQt
-
-        return HudQt(self._build_style(config))
+        return self._ui_factory.build(config.hud)
 
     def _build_log_watcher(self, config: AppConfig) -> LogWatcher | None:
         if not config.log_integration.enabled:
