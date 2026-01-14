@@ -1,48 +1,30 @@
 from __future__ import annotations
 
-import threading
 from pathlib import Path
-from typing import Optional
 
 from ..config.loader import load_config
 from ..config.models import AppConfig
 from ..domain.scheduler import Scheduler
 from ..domain.warning_windows import WarningWindowService
-from ..infrastructure.gsi_server import GSIServer, GSIState
-from ..infrastructure.hotkeys import Hotkeys
-from ..infrastructure.log_watcher import LogWatcher
 from ..ui.factory import UiFactory
 from .commands import HudAction
 from .hud_port import HudPort
 from .hud_presenter import HudPresenter, PresenterConfig
+from .infra_provider import InfraProvider
+from .infra_provider import InfraServices
 from .models import GameStateSnapshot
-from .ports import GsiServerPort, HotkeysPort, LogWatcherPort
 from .use_cases import HudCycleUseCase
-
-
-class GsiStateStore:
-    """Хранилище последнего состояния GSI с блокировкой."""
-
-    def __init__(self) -> None:
-        """Создаёт хранилище состояния."""
-        self._lock = threading.Lock()
-        self._state: Optional[GSIState] = None
-
-    def update(self, state: GSIState) -> None:
-        """Обновляет сохранённое состояние GSI."""
-        with self._lock:
-            self._state = state
-
-    def get(self) -> Optional[GSIState]:
-        """Возвращает текущее состояние GSI."""
-        with self._lock:
-            return self._state
 
 
 class AppController:
     """Координирует работу сервисов HUD."""
 
-    def __init__(self, config: AppConfig, hud: HudPort | None = None) -> None:
+    def __init__(
+        self,
+        config: AppConfig,
+        hud: HudPort | None = None,
+        infra_provider: InfraProvider | None = None,
+    ) -> None:
         """Создаёт контроллер приложения."""
         self._config = config
         self._ui_factory = UiFactory()
@@ -59,11 +41,9 @@ class AppController:
             windows=self._config.windows,
         )
 
-        self._gsi_state_store = GsiStateStore()
-        self._gsi_server: GsiServerPort = GSIServer(on_update=self._gsi_state_store.update)
-
-        self._hotkeys: HotkeysPort = Hotkeys(config.hotkeys)
-        self._log_watcher: LogWatcherPort | None = self._build_log_watcher(config)
+        provider = infra_provider or InfraProvider()
+        services = provider.build(config)
+        self._apply_infra(services)
 
         self._hud.set_on_close(self._on_close)
 
@@ -89,16 +69,11 @@ class AppController:
     def _build_hud(self, config: AppConfig) -> HudPort:
         return self._ui_factory.build(config.hud)
 
-    def _build_log_watcher(self, config: AppConfig) -> LogWatcherPort | None:
-        if not config.log_integration.enabled:
-            return None
-        return LogWatcher(
-            path=config.log_integration.path,
-            start_patterns=config.log_integration.start_patterns,
-            on_start=lambda: None,
-            poll_interval=config.log_integration.poll_interval_ms / 1000.0,
-            debounce_seconds=config.log_integration.debounce_seconds,
-        )
+    def _apply_infra(self, services: InfraServices) -> None:
+        self._gsi_state_store = services.gsi_state_store
+        self._gsi_server = services.gsi_server
+        self._hotkeys = services.hotkeys
+        self._log_watcher = services.log_watcher
 
     def _on_close(self) -> None:
         if self._log_watcher:
