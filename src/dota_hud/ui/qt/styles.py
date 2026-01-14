@@ -20,7 +20,7 @@ class HudColors:
 def default_colors() -> HudColors:
     """Возвращает палитру в стиле Dota+."""
     return HudColors(
-        background_base=QtGui.QColor("#3d535f"),
+        background_base=QtGui.QColor(24, 32, 40),
         text_primary=QtGui.QColor(233, 236, 240),
         text_next=QtGui.QColor(217, 225, 235),
         text_muted=QtGui.QColor(168, 176, 186),

@@ -129,10 +129,9 @@ class HudQt(QtWidgets.QWidget):
         painter.setRenderHint(QtGui.QPainter.Antialiasing, True)
 
         rect = self.rect().adjusted(1, 1, -1, -1)
-        base_alpha = max(0.0, min(1.0, float(self._style.alpha)))
-        left_alpha = max(0, min(255, int(255 * 0.06 * base_alpha)))
-        mid_alpha = max(0, min(255, int(255 * 0.15 * base_alpha)))
-        right_alpha = max(0, min(255, int(255 * 0.25 * base_alpha)))
+        max_alpha = max(0, min(255, int(255 * self._style.alpha)))
+        left_alpha = max(0, min(255, int(max_alpha * 0.4)))
+        right_alpha = max(0, min(255, int(max_alpha * 0.9)))
 
         left = QtGui.QColor(self._colors.background_base)
         right = QtGui.QColor(self._colors.background_base)
