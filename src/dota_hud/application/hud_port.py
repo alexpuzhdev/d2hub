@@ -6,7 +6,12 @@ from typing import Callable, Protocol
 class HudViewPort(Protocol):
     """Интерфейс UI HUD для слоя приложения."""
 
-    def set_warning(self, text: str | None, level: str | None = None) -> None:
+    def set_warning(
+        self,
+        text: str | None,
+        level: str | None = None,
+        blink: bool = False,
+    ) -> None:
         """Устанавливает уровень предупреждения."""
 
     def set_timer(self, text: str) -> None:

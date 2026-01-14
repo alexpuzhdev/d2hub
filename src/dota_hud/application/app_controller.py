@@ -109,7 +109,11 @@ class AppController:
             view_model = cycle.hud_state
 
             self._hud.set_timer(view_model.timer_text)
-            self._hud.set_warning(view_model.warning.text, view_model.warning.level)
+            self._hud.set_warning(
+                view_model.warning.text,
+                view_model.warning.level,
+                view_model.warning.just_activated,
+            )
             self._hud.set_now(cycle.paused_status or view_model.now_text)
 
             self._hud.set_next(view_model.next_text)

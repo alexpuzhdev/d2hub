@@ -22,6 +22,7 @@ class HudQt(QtWidgets.QWidget):
         self._style = style
         self._colors = default_colors()
         self._warning_level = ""
+        self._warning_blink_left = 0
         self._locked = False
         self._drag_enabled = True
         self._drag_offset = QtCore.QPoint()
@@ -200,7 +201,12 @@ class HudQt(QtWidgets.QWidget):
         self.move(event.globalPosition().toPoint() - self._drag_offset)
         event.accept()
 
-    def set_warning(self, text: str | None, level: str | None = None) -> None:
+    def set_warning(
+        self,
+        text: str | None,
+        level: str | None = None,
+        blink: bool = False,
+    ) -> None:
         """Обновляет визуальный уровень предупреждения."""
         self.warning.setText(text or "")
         if level is None and isinstance(text, bool):
@@ -208,7 +214,21 @@ class HudQt(QtWidgets.QWidget):
         else:
             self._warning_level = str(level or "")
         self._apply_text_colors()
+        if blink:
+            self._start_warning_blink()
         self.update()
+
+    def _start_warning_blink(self) -> None:
+        self._warning_blink_left = 4
+        self._blink_warning()
+
+    def _blink_warning(self) -> None:
+        if self._warning_blink_left <= 0:
+            self.warning.setVisible(True)
+            return
+        self.warning.setVisible(not self.warning.isVisible())
+        self._warning_blink_left -= 1
+        QtCore.QTimer.singleShot(150, self._blink_warning)
 
     def set_timer(self, text: str) -> None:
         """Обновляет текст таймера."""

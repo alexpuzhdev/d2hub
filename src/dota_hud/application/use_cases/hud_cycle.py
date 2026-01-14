@@ -36,6 +36,7 @@ class HudCycleUseCase:
         self._warning_service = warning_service
         self._presenter = presenter
         self._windows = windows
+        self._last_warning_key: str | None = None
 
     def run(
         self,
@@ -66,10 +67,16 @@ class HudCycleUseCase:
         )
         warning_level = self._warning_service.warning_level(active_windows)
         warning_text = active_windows[0].text if active_windows else None
+        warning_key = warning_text
+        warning_just_activated = bool(
+            warning_key and warning_key != self._last_warning_key
+        )
+        self._last_warning_key = warning_key
         hud_state = self._presenter.build_view_model(
             tick_state,
             warning_text=warning_text,
             warning_level=warning_level,
+            warning_just_activated=warning_just_activated,
         )
 
         return HudCycleResult(hud_state=hud_state, paused_status=paused_status)

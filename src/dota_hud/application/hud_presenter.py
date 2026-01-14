@@ -28,6 +28,7 @@ class HudPresenter:
         tick_state: TickState,
         warning_text: str | None = None,
         warning_level: str | None = None,
+        warning_just_activated: bool = False,
     ) -> HudState:
         """Собирает модель отображения для текущего состояния."""
         event_text = None
@@ -56,7 +57,11 @@ class HudPresenter:
             now_text=event_text,
             next_text=next_text,
             after_text="",
-            warning=WarningState(text=warning_text, level=warning_level),
+            warning=WarningState(
+                text=warning_text,
+                level=warning_level,
+                just_activated=warning_just_activated,
+            ),
         )
 
     def _format_items(self, items: list[str]) -> str:

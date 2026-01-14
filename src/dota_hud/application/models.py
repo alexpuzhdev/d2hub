@@ -12,6 +12,7 @@ class WarningState:
 
     text: str | None
     level: str | None
+    just_activated: bool = False
 
 
 @dataclass(frozen=True)
