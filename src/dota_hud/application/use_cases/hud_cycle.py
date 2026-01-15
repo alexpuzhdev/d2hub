@@ -64,6 +64,8 @@ class HudCycleUseCase:
             since_heartbeat = time.time() - last_heartbeat
             if since_heartbeat > self._gsi_timeout_seconds:
                 paused_status = "GSI OFFLINE"
+        if paused_status in {"GSI STALE", "GSI OFFLINE"}:
+            self._scheduler.clear_external()
 
         for action in actions:
             if action is HudAction.STOP:
