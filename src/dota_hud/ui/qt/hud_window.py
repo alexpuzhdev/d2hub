@@ -95,7 +95,6 @@ class HudQt(QtWidgets.QWidget):
         layout.addWidget(self.warning)
         layout.addWidget(self.now)
         layout.addWidget(self.next)
-        layout.addWidget(self.after)
         layout.addStretch(1)
 
         self.setLayout(layout)
