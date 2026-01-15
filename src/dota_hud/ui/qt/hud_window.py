@@ -204,15 +204,15 @@ class HudQt(QtWidgets.QWidget):
             QtGui.QColor(base.red(), base.green(), base.blue(), max_alpha),
         )
 
-        # середина — уже почти нет
+        # середина — мягкое затухание
         gradient.setColorAt(
-            0.7,
-            QtGui.QColor(base.red(), base.green(), base.blue(), int(max_alpha * 0.15)),
+            0.6,
+            QtGui.QColor(base.red(), base.green(), base.blue(), int(max_alpha * 0.22)),
         )
 
-        # справа — НОЛЬ
+        # справа — почти незаметно
         gradient.setColorAt(
-            1.0,
+            0.9,
             QtGui.QColor(base.red(), base.green(), base.blue(), 0),
         )
 
