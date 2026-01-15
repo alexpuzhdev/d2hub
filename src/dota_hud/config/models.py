@@ -22,6 +22,12 @@ class HudConfig:
     font_family: str = "Segoe UI"
     font_size: int = 18
     font_weight: str = "bold"
+    margin_horizontal: int = 20
+    margin_vertical: int = 18
+    spacing: int = 8
+    block_padding: int = 6
+    text_fade_duration_ms: int = 220
+    text_fade_start_opacity: float = 0.6
 
 
 @dataclass(frozen=True)

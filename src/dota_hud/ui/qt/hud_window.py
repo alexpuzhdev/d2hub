@@ -27,6 +27,8 @@ class HudQt(QtWidgets.QWidget):
         self._block_levels = {"now": "", "next": "", "macro": ""}
         self._block_strengths = {"now": 0.0, "next": 0.0, "macro": 0.0}
         self._block_anims: dict[str, QtCore.QVariantAnimation] = {}
+        self._label_effects: dict[QtWidgets.QLabel, QtWidgets.QGraphicsOpacityEffect] = {}
+        self._label_anims: dict[QtWidgets.QLabel, QtCore.QPropertyAnimation] = {}
         self._auto_height_enabled = True
         self._base_height = style.height
         self._locked = False
@@ -56,8 +58,13 @@ class HudQt(QtWidgets.QWidget):
 
     def _build_layout(self) -> None:
         layout = QtWidgets.QVBoxLayout()
-        layout.setContentsMargins(20, 18, 20, 18)
-        layout.setSpacing(8)
+        layout.setContentsMargins(
+            self._style.margin_horizontal,
+            self._style.margin_vertical,
+            self._style.margin_horizontal,
+            self._style.margin_vertical,
+        )
+        layout.setSpacing(self._style.spacing)
 
         self.timer = QtWidgets.QLabel("0:00")
         self.timer.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
@@ -143,7 +150,7 @@ class HudQt(QtWidgets.QWidget):
                 self._colors.text_primary,
                 background=self._block_background_color("now"),
                 background_alpha=140,
-                padding=6,
+                padding=self._style.block_padding,
             )
         )
         self.next.setStyleSheet(
@@ -151,7 +158,7 @@ class HudQt(QtWidgets.QWidget):
                 self._colors.text_next,
                 background=self._block_background_color("next"),
                 background_alpha=120,
-                padding=6,
+                padding=self._style.block_padding,
             )
         )
         self.macro.setStyleSheet(
@@ -159,7 +166,7 @@ class HudQt(QtWidgets.QWidget):
                 self._colors.text_primary,
                 background=self._block_background_color("macro"),
                 background_alpha=120,
-                padding=6,
+                padding=self._style.block_padding,
             )
         )
         if self._warning_level == "danger":
@@ -185,7 +192,7 @@ class HudQt(QtWidgets.QWidget):
                 warning_color,
                 background=warning_bg,
                 background_alpha=warning_bg_alpha,
-                padding=6,
+                padding=self._style.block_padding,
             )
         )
 
@@ -290,6 +297,24 @@ class HudQt(QtWidgets.QWidget):
         self._apply_text_colors()
         self.update()
 
+    def _animate_text(self, label: QtWidgets.QLabel) -> None:
+        effect = self._label_effects.get(label)
+        if effect is None:
+            effect = QtWidgets.QGraphicsOpacityEffect(self)
+            effect.setOpacity(1.0)
+            label.setGraphicsEffect(effect)
+            self._label_effects[label] = effect
+        anim = self._label_anims.get(label)
+        if anim is None:
+            anim = QtCore.QPropertyAnimation(effect, b"opacity", self)
+            anim.setDuration(self._style.text_fade_duration_ms)
+            anim.setEasingCurve(QtCore.QEasingCurve.InOutQuad)
+            self._label_anims[label] = anim
+        anim.stop()
+        anim.setStartValue(self._style.text_fade_start_opacity)
+        anim.setEndValue(1.0)
+        anim.start()
+
     def _target_warning_strength(self) -> float:
         if self._warning_level == "danger":
             return 1.0
@@ -365,6 +390,7 @@ class HudQt(QtWidgets.QWidget):
             self._warning_level = str(level or "")
         self._apply_text_colors()
         self._animate_warning_overlay()
+        self._animate_text(self.warning)
         self._resize_to_content()
         self.update()
 
@@ -376,18 +402,21 @@ class HudQt(QtWidgets.QWidget):
         """Обновляет блок NOW."""
         self.now.setText(text)
         self._set_block_level("now", level)
+        self._animate_text(self.now)
         self._resize_to_content()
 
     def set_next(self, text: str, level: str | None = None) -> None:
         """Обновляет блок NEXT."""
         self.next.setText(text)
         self._set_block_level("next", level)
+        self._animate_text(self.next)
         self._resize_to_content()
 
     def set_macro(self, text: str, level: str | None = None) -> None:
         """Обновляет блок MACRO."""
         self.macro.setText(text)
         self._set_block_level("macro", level)
+        self._animate_text(self.macro)
         self._resize_to_content()
 
     def every(self, ms: int, fn: Callable[[], None]) -> None:
