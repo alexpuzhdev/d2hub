@@ -129,6 +129,7 @@ class HudQt(QtWidgets.QWidget):
 
         self.warning = QtWidgets.QLabel("")
         self._configure_block_label(self.warning, self._style.font_size)
+        self.warning.setAttribute(QtCore.Qt.WA_TranslucentBackground, False)
 
         self.now = QtWidgets.QLabel("ГОТОВО  |  F7 LOCK")
         self._configure_block_label(self.now, self._style.font_size)
