@@ -21,6 +21,12 @@ class UiFactory:
             font_family=config.font_family,
             font_size=config.font_size,
             font_weight=config.font_weight,
+            margin_horizontal=config.margin_horizontal,
+            margin_vertical=config.margin_vertical,
+            spacing=config.spacing,
+            block_padding=config.block_padding,
+            text_fade_duration_ms=config.text_fade_duration_ms,
+            text_fade_start_opacity=config.text_fade_start_opacity,
         )
 
         if ui_name == "qt":

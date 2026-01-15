@@ -5,7 +5,13 @@ from typing import Dict
 from ..domain.events import Bucket, mmss_to_seconds
 from ..domain.macro_info import DEFAULT_MACRO_TIMINGS, MacroTiming
 from ..domain.warning_windows import WarningWindow
-from .models import AppConfig, HotkeysConfig, HudConfig, LogIntegrationConfig
+from .models import (
+    AppConfig,
+    HotkeysConfig,
+    HudConfig,
+    LogIntegrationConfig,
+    PresenterConfig,
+)
 
 
 def _merge_into(items_map: Dict[int, list[str]], timestamp: int, items: list[str]) -> None:
@@ -22,6 +28,15 @@ def _items_from_obj(obj: dict) -> list[str]:
         text = str(obj["text"]).strip()
         return [text] if text else []
     return []
+
+
+def _text_from_obj(obj: dict) -> str:
+    items = _items_from_obj(obj)
+    if not items:
+        return ""
+    if len(items) == 1:
+        return items[0]
+    return "\n".join(items)
 
 
 def _expand_rules(rules_raw: list[dict], items_map: Dict[int, list[str]]) -> None:
@@ -63,11 +78,37 @@ def _load_macro_timings(raw: list[dict] | None) -> list[MacroTiming]:
     return timings
 
 
+def _load_macro_hints(raw: list[object] | None) -> list[str]:
+    if not raw:
+        return []
+    hints: list[str] = []
+    for item in raw:
+        if isinstance(item, dict):
+            hints.extend(_items_from_obj(item))
+        else:
+            text = str(item).strip()
+            if text:
+                hints.append(text)
+    return hints
+
+
+def _load_presenter(raw: dict | None, macro_hints: list[str]) -> PresenterConfig:
+    data = dict(raw or {})
+    data["macro_hints"] = macro_hints
+    return PresenterConfig(**data)
+
+
+def _load_hotkeys(raw: dict | None) -> HotkeysConfig:
+    if not raw:
+        return HotkeysConfig()
+    return HotkeysConfig(lock=str(raw.get("lock", HotkeysConfig().lock)))
+
+
 def map_config(data: dict) -> AppConfig:
     """Преобразует словарь YAML в конфигурацию приложения."""
     hud_data = dict(data.get("hud", {}) or {})
     hud = HudConfig(**hud_data)
-    hotkeys = HotkeysConfig(**(data.get("hotkeys", {}) or {}))
+    hotkeys = _load_hotkeys(dict(data.get("hotkeys", {}) or {}))
     log_data = dict(data.get("log_integration", {}) or {})
     if log_data.get("start_patterns") is None:
         log_data.pop("start_patterns", None)
@@ -89,7 +130,7 @@ def map_config(data: dict) -> AppConfig:
     for window in (data.get("windows", []) or []):
         from_time = mmss_to_seconds(str(window["from"]))
         to_time = mmss_to_seconds(str(window["to"]))
-        text = str(window.get("text", "")).strip()
+        text = _text_from_obj(window)
         if not text:
             continue
         level = str(window.get("level", "info")).lower()
@@ -106,7 +147,7 @@ def map_config(data: dict) -> AppConfig:
     for window in (data.get("danger_windows", []) or []):
         from_time = mmss_to_seconds(str(window["from"]))
         to_time = mmss_to_seconds(str(window["to"]))
-        text = str(window.get("text", "")).strip()
+        text = _text_from_obj(window)
         if not text:
             continue
         windows.append(
@@ -120,6 +161,9 @@ def map_config(data: dict) -> AppConfig:
         )
     windows.sort(key=lambda window: window.from_t)
 
+    macro_hints = _load_macro_hints(data.get("macro_hints"))
+    presenter = _load_presenter(data.get("presenter"), macro_hints)
+
     return AppConfig(
         hud=hud,
         hotkeys=hotkeys,
@@ -127,4 +171,5 @@ def map_config(data: dict) -> AppConfig:
         buckets=buckets,
         windows=windows,
         macro_timings=_load_macro_timings(data.get("macro_timings")),
+        presenter=presenter,
     )
