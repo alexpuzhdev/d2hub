@@ -1,0 +1,13 @@
+macro_timings:
+  - name: "Wisdom rune"
+    first_spawn: "7:00"
+    interval: "7:00"
+    up_window: "0:30"
+  - name: "Power rune"
+    first_spawn: "6:00"
+    interval: "2:00"
+    up_window: "0:30"
+  - name: "Bounty rune"
+    first_spawn: "0:00"
+    interval: "3:00"
+    up_window: "0:30"
