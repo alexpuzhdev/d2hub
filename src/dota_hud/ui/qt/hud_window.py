@@ -239,11 +239,11 @@ class HudQt(QtWidgets.QWidget):
         if self._warning_level == "danger":
             warning_color = self._colors.text_danger
             warning_bg = self._colors.warning_block_danger
-            warning_bg_alpha = 140
+            warning_bg_alpha = 200
         elif self._warning_level == "warn":
             warning_color = self._colors.text_warning
             warning_bg = self._colors.warning_block_warn
-            warning_bg_alpha = 120
+            warning_bg_alpha = 180
         elif self._warning_level == "info":
             warning_color = self._colors.text_info
             warning_bg = self._colors.block_background
@@ -377,9 +377,9 @@ class HudQt(QtWidgets.QWidget):
 
     def _base_warning_strength(self) -> float:
         if self._warning_level in {"danger", "warn"}:
-            return 0.35
+            return 0.55
         if self._warning_level == "info":
-            return 0.2
+            return 0.35
         return 0.0
 
     def _animate_warning_overlay(self) -> None:
