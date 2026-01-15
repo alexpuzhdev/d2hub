@@ -32,13 +32,20 @@ class AppController:
         self._scheduler = Scheduler(config.buckets)
         self._warning_service = WarningWindowService()
         self._presenter = HudPresenter(
-            PresenterConfig(macro_timings=tuple(self._config.macro_timings))
+            PresenterConfig(
+                max_lines=self._config.presenter.max_lines,
+                macro_max_lines=self._config.presenter.macro_max_lines,
+                macro_timings=tuple(self._config.macro_timings),
+                macro_hints=tuple(self._config.presenter.macro_hints),
+            )
         )
         self._cycle = HudCycleUseCase(
             scheduler=self._scheduler,
             warning_service=self._warning_service,
             presenter=self._presenter,
             windows=self._config.windows,
+            resync_threshold_seconds=self._config.log_integration.resync_threshold_seconds,
+            gsi_timeout_seconds=self._config.log_integration.gsi_timeout_seconds,
         )
 
         provider = infra_provider or InfraProvider()
@@ -96,6 +103,7 @@ class AppController:
                 GameStateSnapshot(
                     clock_time=gsi_state.clock_time,
                     paused=gsi_state.paused,
+                    updated_at=gsi_state.updated_at,
                 )
                 if gsi_state
                 else None
@@ -105,14 +113,25 @@ class AppController:
             if HudAction.LOCK in actions:
                 self._hud.toggle_lock()
             cycle_actions = [action for action in actions if action is not HudAction.LOCK]
-            cycle = self._cycle.run(game_state, cycle_actions)
+            cycle = self._cycle.run(
+                game_state,
+                cycle_actions,
+                last_heartbeat=self._gsi_state_store.last_heartbeat(),
+            )
             view_model = cycle.hud_state
 
             self._hud.set_timer(view_model.timer_text)
             self._hud.set_warning(view_model.warning.text, view_model.warning.level)
-            self._hud.set_now(cycle.paused_status or view_model.now_text)
+            self._hud.set_now(
+                cycle.paused_status or view_model.now_text,
+                view_model.now_level,
+            )
 
-            self._hud.set_next(view_model.next_text)
-            self._hud.set_after(view_model.after_text)
+            self._hud.set_next(view_model.next_text, view_model.next_level)
+            self._hud.set_macro(
+                view_model.macro_text,
+                view_model.macro_level,
+                list(view_model.macro_lines),
+            )
         except Exception as exc:
             self._hud.set_now(f"HUD error: {exc}")
