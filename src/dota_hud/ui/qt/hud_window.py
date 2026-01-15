@@ -24,11 +24,11 @@ class HudQt(QtWidgets.QWidget):
         self._warning_level = ""
         self._warning_block_strength = 0.0
         self._warning_anim: Optional[QtCore.QPropertyAnimation] = None
+        self._last_warning_text = ""
+        self._last_warning_level = ""
         self._block_levels = {"now": "", "next": "", "macro": ""}
         self._block_strengths = {"now": 0.0, "next": 0.0, "macro": 0.0}
         self._block_anims: dict[str, QtCore.QVariantAnimation] = {}
-        self._label_effects: dict[QtWidgets.QLabel, QtWidgets.QGraphicsOpacityEffect] = {}
-        self._label_anims: dict[QtWidgets.QLabel, QtCore.QPropertyAnimation] = {}
         self._auto_height_enabled = True
         self._base_height = style.height
         self._locked = False
@@ -276,6 +276,8 @@ class HudQt(QtWidgets.QWidget):
 
     def _set_block_level(self, key: str, level: str | None) -> None:
         normalized = str(level or "").lower()
+        if self._block_levels.get(key) == normalized:
+            return
         self._block_levels[key] = normalized
         target = self._target_block_strength(normalized)
         anim = self._block_anims.get(key)
@@ -296,24 +298,6 @@ class HudQt(QtWidgets.QWidget):
         self._block_strengths[key] = max(0.0, min(1.0, float(value)))
         self._apply_text_colors()
         self.update()
-
-    def _animate_text(self, label: QtWidgets.QLabel) -> None:
-        effect = self._label_effects.get(label)
-        if effect is None:
-            effect = QtWidgets.QGraphicsOpacityEffect(self)
-            effect.setOpacity(1.0)
-            label.setGraphicsEffect(effect)
-            self._label_effects[label] = effect
-        anim = self._label_anims.get(label)
-        if anim is None:
-            anim = QtCore.QPropertyAnimation(effect, b"opacity", self)
-            anim.setDuration(self._style.text_fade_duration_ms)
-            anim.setEasingCurve(QtCore.QEasingCurve.InOutQuad)
-            self._label_anims[label] = anim
-        anim.stop()
-        anim.setStartValue(self._style.text_fade_start_opacity)
-        anim.setEndValue(1.0)
-        anim.start()
 
     def _target_warning_strength(self) -> float:
         if self._warning_level == "danger":
@@ -383,14 +367,22 @@ class HudQt(QtWidgets.QWidget):
 
     def set_warning(self, text: str | None, level: str | None = None) -> None:
         """Обновляет визуальный уровень предупреждения."""
-        self.warning.setText(text or "")
+        warning_text = text or ""
+        self.warning.setText(warning_text)
         if level is None and isinstance(text, bool):
-            self._warning_level = "warn" if text else ""
+            warning_level = "warn" if text else ""
         else:
-            self._warning_level = str(level or "")
+            warning_level = str(level or "")
+        should_animate = (
+            warning_text != self._last_warning_text
+            or warning_level != self._last_warning_level
+        )
+        self._warning_level = warning_level
+        self._last_warning_text = warning_text
+        self._last_warning_level = warning_level
         self._apply_text_colors()
-        self._animate_warning_overlay()
-        self._animate_text(self.warning)
+        if should_animate:
+            self._animate_warning_overlay()
         self._resize_to_content()
         self.update()
 
@@ -402,21 +394,18 @@ class HudQt(QtWidgets.QWidget):
         """Обновляет блок NOW."""
         self.now.setText(text)
         self._set_block_level("now", level)
-        self._animate_text(self.now)
         self._resize_to_content()
 
     def set_next(self, text: str, level: str | None = None) -> None:
         """Обновляет блок NEXT."""
         self.next.setText(text)
         self._set_block_level("next", level)
-        self._animate_text(self.next)
         self._resize_to_content()
 
     def set_macro(self, text: str, level: str | None = None) -> None:
         """Обновляет блок MACRO."""
         self.macro.setText(text)
         self._set_block_level("macro", level)
-        self._animate_text(self.macro)
         self._resize_to_content()
 
     def every(self, ms: int, fn: Callable[[], None]) -> None:
