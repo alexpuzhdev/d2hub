@@ -18,8 +18,8 @@ class HudViewPort(Protocol):
     def set_next(self, text: str) -> None:
         """Обновляет блок NEXT."""
 
-    def set_after(self, text: str) -> None:
-        """Обновляет блок AFTER."""
+    def set_macro(self, text: str) -> None:
+        """Обновляет блок MACRO."""
 
 
 class HudSchedulePort(Protocol):

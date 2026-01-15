@@ -5,12 +5,14 @@ hud:
   x: 30
   y: 30
   alpha: 0.60
+  font_family: "Radiance"
+  font_size: 18
+  font_weight: "bold"
 
 hotkeys:
-  start: F8
-  stop: F9
-  reset: F10
   lock: F7
+
+macro_config: "macro.yaml"
 
 log_integration:
   enabled: false

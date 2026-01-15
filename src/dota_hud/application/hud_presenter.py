@@ -33,11 +33,11 @@ class HudPresenter:
         event_text = None
         if tick_state.now:
             event_text = (
-                f"NOW @ {format_mmss(tick_state.now.t)}\n"
+                f"СЕЙЧАС {format_mmss(tick_state.now.t)}\n"
                 f"{self._format_items(tick_state.now.items)}"
             )
         if event_text is None:
-            event_text = "NOW: —"
+            event_text = "СЕЙЧАС: —"
 
         next_text = "ДАЛЕЕ: —"
         if tick_state.next_event:
@@ -47,22 +47,16 @@ class HudPresenter:
                 f"{self._format_items(tick_state.next_event.items)}"
             )
 
-        after_text = "ПОТОМ: —"
-        if tick_state.after_event:
-            after_text = (
-                f"ПОТОМ {format_mmss(tick_state.after_event.t)}\n"
-                f"{self._format_items(tick_state.after_event.items)}"
-            )
-
         macro_lines = build_macro_lines(tick_state.elapsed, self._config.macro_timings)
+        macro_text = "MACRO: —"
         if macro_lines:
-            after_text = "\n".join([after_text, "MACRO:", *macro_lines])
+            macro_text = "\n".join(["MACRO:", *macro_lines])
 
         return HudState(
             timer_text=format_mmss(tick_state.elapsed),
             now_text=event_text,
             next_text=next_text,
-            after_text=after_text,
+            macro_text=macro_text,
             warning=WarningState(text=warning_text, level=warning_level),
         )
 
