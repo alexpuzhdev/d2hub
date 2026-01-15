@@ -27,6 +27,8 @@ class HudQt(QtWidgets.QWidget):
         self._block_levels = {"now": "", "next": "", "macro": ""}
         self._block_strengths = {"now": 0.0, "next": 0.0, "macro": 0.0}
         self._block_anims: dict[str, QtCore.QVariantAnimation] = {}
+        self._auto_height_enabled = True
+        self._base_height = style.height
         self._locked = False
         self._drag_enabled = True
         self._drag_offset = QtCore.QPoint()
@@ -186,6 +188,13 @@ class HudQt(QtWidgets.QWidget):
                 padding=6,
             )
         )
+
+    def _resize_to_content(self) -> None:
+        if not self._auto_height_enabled:
+            return
+        desired_height = max(self._base_height, self.sizeHint().height())
+        if desired_height > self.height():
+            self.resize(self._style.width, desired_height)
 
     def paintEvent(self, event: QtGui.QPaintEvent) -> None:
         painter = QtGui.QPainter(self)
@@ -356,6 +365,7 @@ class HudQt(QtWidgets.QWidget):
             self._warning_level = str(level or "")
         self._apply_text_colors()
         self._animate_warning_overlay()
+        self._resize_to_content()
         self.update()
 
     def set_timer(self, text: str) -> None:
@@ -366,16 +376,19 @@ class HudQt(QtWidgets.QWidget):
         """Обновляет блок NOW."""
         self.now.setText(text)
         self._set_block_level("now", level)
+        self._resize_to_content()
 
     def set_next(self, text: str, level: str | None = None) -> None:
         """Обновляет блок NEXT."""
         self.next.setText(text)
         self._set_block_level("next", level)
+        self._resize_to_content()
 
     def set_macro(self, text: str, level: str | None = None) -> None:
         """Обновляет блок MACRO."""
         self.macro.setText(text)
         self._set_block_level("macro", level)
+        self._resize_to_content()
 
     def every(self, ms: int, fn: Callable[[], None]) -> None:
         """Планирует повторный вызов функции через заданный интервал."""
