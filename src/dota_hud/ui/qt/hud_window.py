@@ -27,6 +27,7 @@ class HudQt(QtWidgets.QWidget):
         self._warning_anim: Optional[QtCore.QPropertyAnimation] = None
         self._warning_hold_timer = QtCore.QTimer(self)
         self._warning_hold_timer.setSingleShot(True)
+        self._warning_base_strength = 0.0
         self._last_warning_text = ""
         self._last_warning_level = ""
         self._block_levels = {"now": "", "next": "", "macro": ""}
@@ -43,6 +44,7 @@ class HudQt(QtWidgets.QWidget):
         self._configure_window()
         self._build_layout()
         self._apply_text_colors()
+        self._warning_hold_timer.timeout.connect(self._fade_warning_overlay)
 
     def _configure_window(self) -> None:
         self.setWindowTitle(self._style.title)
@@ -338,6 +340,13 @@ class HudQt(QtWidgets.QWidget):
             return 0.6
         return 0.0
 
+    def _base_warning_strength(self) -> float:
+        if self._warning_level in {"danger", "warn"}:
+            return 0.35
+        if self._warning_level == "info":
+            return 0.2
+        return 0.0
+
     def _animate_warning_overlay(self) -> None:
         target = self._target_warning_strength()
         if self._warning_anim is None:
@@ -345,11 +354,10 @@ class HudQt(QtWidgets.QWidget):
             self._warning_anim.setDuration(240)
             self._warning_anim.setEasingCurve(QtCore.QEasingCurve.InOutQuad)
         self._warning_anim.stop()
-        self._warning_anim.setStartValue(0.0)
+        self._warning_anim.setStartValue(self._warning_base_strength)
         self._warning_anim.setEndValue(target)
         self._warning_anim.start()
         self._warning_hold_timer.stop()
-        self._warning_hold_timer.timeout.connect(self._fade_warning_overlay)
         self._warning_hold_timer.start(220)
 
     def _fade_warning_overlay(self) -> None:
@@ -357,7 +365,7 @@ class HudQt(QtWidgets.QWidget):
             return
         self._warning_anim.stop()
         self._warning_anim.setStartValue(self._warning_block_strength)
-        self._warning_anim.setEndValue(0.0)
+        self._warning_anim.setEndValue(self._warning_base_strength)
         self._warning_anim.start()
 
     @QtCore.Property(float)
@@ -421,6 +429,9 @@ class HudQt(QtWidgets.QWidget):
         self._warning_level = warning_level
         self._last_warning_text = warning_text
         self._last_warning_level = warning_level
+        self._warning_base_strength = self._base_warning_strength()
+        if not should_animate:
+            self._warning_block_strength = self._warning_base_strength
         self._apply_text_colors()
         if should_animate:
             self._animate_warning_overlay()
