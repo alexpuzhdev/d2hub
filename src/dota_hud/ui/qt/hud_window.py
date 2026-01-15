@@ -82,6 +82,8 @@ class HudQt(QtWidgets.QWidget):
         self._warning_base_strength = 0.0
         self._last_warning_text = ""
         self._last_warning_level = ""
+        self._warning_fill_color: QtGui.QColor | None = None
+        self._warning_fill_alpha = 0
         self._block_levels = {"now": "", "next": "", "macro": ""}
         self._block_strengths = {"now": 0.0, "next": 0.0, "macro": 0.0}
         self._block_anims: dict[str, QtCore.QVariantAnimation] = {}
@@ -257,6 +259,12 @@ class HudQt(QtWidgets.QWidget):
             warning_bg_alpha = None
         if warning_bg_alpha is not None:
             warning_bg_alpha = int(warning_bg_alpha * self._warning_block_strength)
+        if warning_bg is not None and warning_bg_alpha is not None:
+            self._warning_fill_color = warning_bg
+            self._warning_fill_alpha = warning_bg_alpha
+        else:
+            self._warning_fill_color = None
+            self._warning_fill_alpha = 0
         self.warning.setStyleSheet(
             self._label_style(
                 warning_color,
@@ -280,7 +288,8 @@ class HudQt(QtWidgets.QWidget):
         rect = self.rect()
 
         base = QtGui.QColor(self._colors.background_base)
-        max_alpha = int(255 * self._style.alpha)  # стартовая прозрачность
+        effective_alpha = max(self._style.alpha, 0.75)
+        max_alpha = int(255 * effective_alpha)  # стартовая прозрачность
 
         gradient = QtGui.QLinearGradient(
             rect.left(),
@@ -308,6 +317,19 @@ class HudQt(QtWidgets.QWidget):
         )
 
         painter.fillRect(rect, gradient)
+
+        if self._warning_fill_color and self._warning_fill_alpha > 0:
+            warning_rect = self.warning.geometry().adjusted(
+                -self._style.block_padding,
+                -self._style.block_padding,
+                self._style.block_padding,
+                self._style.block_padding,
+            )
+            fill_color = QtGui.QColor(self._warning_fill_color)
+            fill_color.setAlpha(self._warning_fill_alpha)
+            painter.setPen(QtCore.Qt.NoPen)
+            painter.setBrush(QtGui.QBrush(fill_color))
+            painter.drawRoundedRect(warning_rect, 4, 4)
 
         painter.end()
 
