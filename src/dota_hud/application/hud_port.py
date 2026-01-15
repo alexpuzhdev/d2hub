@@ -12,13 +12,13 @@ class HudViewPort(Protocol):
     def set_timer(self, text: str) -> None:
         """Обновляет текст таймера."""
 
-    def set_now(self, text: str) -> None:
+    def set_now(self, text: str, level: str | None = None) -> None:
         """Обновляет блок NOW."""
 
-    def set_next(self, text: str) -> None:
+    def set_next(self, text: str, level: str | None = None) -> None:
         """Обновляет блок NEXT."""
 
-    def set_macro(self, text: str) -> None:
+    def set_macro(self, text: str, level: str | None = None) -> None:
         """Обновляет блок MACRO."""
 
 

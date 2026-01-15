@@ -55,8 +55,11 @@ class HudPresenter:
         return HudState(
             timer_text=format_mmss(tick_state.elapsed),
             now_text=event_text,
+            now_level=None,
             next_text=next_text,
+            next_level=None,
             macro_text=macro_text,
+            macro_level=None,
             warning=WarningState(text=warning_text, level=warning_level),
         )
 

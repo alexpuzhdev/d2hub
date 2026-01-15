@@ -24,6 +24,9 @@ class HudQt(QtWidgets.QWidget):
         self._warning_level = ""
         self._warning_block_strength = 0.0
         self._warning_anim: Optional[QtCore.QPropertyAnimation] = None
+        self._block_levels = {"now": "", "next": "", "macro": ""}
+        self._block_strengths = {"now": 0.0, "next": 0.0, "macro": 0.0}
+        self._block_anims: dict[str, QtCore.QVariantAnimation] = {}
         self._locked = False
         self._drag_enabled = True
         self._drag_offset = QtCore.QPoint()
@@ -136,7 +139,7 @@ class HudQt(QtWidgets.QWidget):
         self.now.setStyleSheet(
             self._label_style(
                 self._colors.text_primary,
-                background=self._colors.block_background,
+                background=self._block_background_color("now"),
                 background_alpha=140,
                 padding=6,
             )
@@ -144,7 +147,7 @@ class HudQt(QtWidgets.QWidget):
         self.next.setStyleSheet(
             self._label_style(
                 self._colors.text_next,
-                background=self._colors.block_background,
+                background=self._block_background_color("next"),
                 background_alpha=120,
                 padding=6,
             )
@@ -152,7 +155,7 @@ class HudQt(QtWidgets.QWidget):
         self.macro.setStyleSheet(
             self._label_style(
                 self._colors.text_primary,
-                background=self._colors.block_background,
+                background=self._block_background_color("macro"),
                 background_alpha=120,
                 padding=6,
             )
@@ -221,6 +224,62 @@ class HudQt(QtWidgets.QWidget):
         painter.fillRect(rect, gradient)
 
         painter.end()
+
+    def _block_background_color(self, key: str) -> QtGui.QColor:
+        base = self._colors.block_background
+        level = self._block_levels.get(key, "")
+        strength = self._block_strengths.get(key, 0.0)
+        if level == "danger":
+            target = self._colors.warning_block_danger
+        elif level == "warn":
+            target = self._colors.warning_block_warn
+        elif level == "info":
+            target = self._colors.block_background
+        else:
+            target = self._colors.block_background
+        return self._blend_colors(base, target, strength)
+
+    @staticmethod
+    def _blend_colors(
+        base: QtGui.QColor,
+        target: QtGui.QColor,
+        strength: float,
+    ) -> QtGui.QColor:
+        strength = max(0.0, min(1.0, float(strength)))
+        red = int(base.red() + (target.red() - base.red()) * strength)
+        green = int(base.green() + (target.green() - base.green()) * strength)
+        blue = int(base.blue() + (target.blue() - base.blue()) * strength)
+        return QtGui.QColor(red, green, blue)
+
+    def _target_block_strength(self, level: str) -> float:
+        if level in {"danger", "warn"}:
+            return 1.0
+        if level == "info":
+            return 0.6
+        return 0.0
+
+    def _set_block_level(self, key: str, level: str | None) -> None:
+        normalized = str(level or "").lower()
+        self._block_levels[key] = normalized
+        target = self._target_block_strength(normalized)
+        anim = self._block_anims.get(key)
+        if anim is None:
+            anim = QtCore.QVariantAnimation(self)
+            anim.setDuration(450)
+            anim.setEasingCurve(QtCore.QEasingCurve.InOutQuad)
+            anim.valueChanged.connect(
+                lambda value, block=key: self._update_block_strength(block, value)
+            )
+            self._block_anims[key] = anim
+        anim.stop()
+        anim.setStartValue(self._block_strengths.get(key, 0.0))
+        anim.setEndValue(target)
+        anim.start()
+
+    def _update_block_strength(self, key: str, value: object) -> None:
+        self._block_strengths[key] = max(0.0, min(1.0, float(value)))
+        self._apply_text_colors()
+        self.update()
 
     def _target_warning_strength(self) -> float:
         if self._warning_level == "danger":
@@ -303,17 +362,20 @@ class HudQt(QtWidgets.QWidget):
         """Обновляет текст таймера."""
         self.timer.setText(text)
 
-    def set_now(self, text: str) -> None:
+    def set_now(self, text: str, level: str | None = None) -> None:
         """Обновляет блок NOW."""
         self.now.setText(text)
+        self._set_block_level("now", level)
 
-    def set_next(self, text: str) -> None:
+    def set_next(self, text: str, level: str | None = None) -> None:
         """Обновляет блок NEXT."""
         self.next.setText(text)
+        self._set_block_level("next", level)
 
-    def set_macro(self, text: str) -> None:
+    def set_macro(self, text: str, level: str | None = None) -> None:
         """Обновляет блок MACRO."""
         self.macro.setText(text)
+        self._set_block_level("macro", level)
 
     def every(self, ms: int, fn: Callable[[], None]) -> None:
         """Планирует повторный вызов функции через заданный интервал."""
