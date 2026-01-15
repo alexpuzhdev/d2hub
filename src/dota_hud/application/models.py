@@ -20,8 +20,11 @@ class HudState:
 
     timer_text: str
     now_text: str
+    now_level: str | None
     next_text: str
-    after_text: str
+    next_level: str | None
+    macro_text: str
+    macro_level: str | None
     warning: WarningState
 
 
@@ -31,3 +34,4 @@ class GameStateSnapshot:
 
     clock_time: int | None
     paused: bool
+    updated_at: float | None = None
