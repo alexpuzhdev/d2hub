@@ -42,6 +42,8 @@ class HudQt(QtWidgets.QWidget):
         self._build_layout()
         self._apply_text_colors()
         self._close_extra_windows()
+        QtCore.QTimer.singleShot(0, self._close_extra_windows)
+        QtCore.QTimer.singleShot(500, self._close_extra_windows)
 
     def _close_extra_windows(self) -> None:
         for widget in QtWidgets.QApplication.topLevelWidgets():
