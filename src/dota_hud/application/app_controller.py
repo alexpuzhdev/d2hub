@@ -32,7 +32,12 @@ class AppController:
         self._scheduler = Scheduler(config.buckets)
         self._warning_service = WarningWindowService()
         self._presenter = HudPresenter(
-            PresenterConfig(macro_timings=tuple(self._config.macro_timings))
+            PresenterConfig(
+                max_lines=self._config.presenter.max_lines,
+                macro_max_lines=self._config.presenter.macro_max_lines,
+                macro_timings=tuple(self._config.macro_timings),
+                macro_hints=tuple(self._config.presenter.macro_hints),
+            )
         )
         self._cycle = HudCycleUseCase(
             scheduler=self._scheduler,
@@ -110,9 +115,12 @@ class AppController:
 
             self._hud.set_timer(view_model.timer_text)
             self._hud.set_warning(view_model.warning.text, view_model.warning.level)
-            self._hud.set_now(cycle.paused_status or view_model.now_text)
+            self._hud.set_now(
+                cycle.paused_status or view_model.now_text,
+                view_model.now_level,
+            )
 
-            self._hud.set_next(view_model.next_text)
-            self._hud.set_after(view_model.after_text)
+            self._hud.set_next(view_model.next_text, view_model.next_level)
+            self._hud.set_macro(view_model.macro_text, view_model.macro_level)
         except Exception as exc:
             self._hud.set_now(f"HUD error: {exc}")

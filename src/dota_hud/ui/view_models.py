@@ -10,4 +10,4 @@ class HudViewModel:
     timer_text: str
     now_text: str
     next_text: str
-    after_text: str
+    macro_text: str
