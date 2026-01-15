@@ -16,3 +16,9 @@ class HudStyle:
     font_family: str
     font_size: int
     font_weight: str
+    margin_horizontal: int
+    margin_vertical: int
+    spacing: int
+    block_padding: int
+    text_fade_duration_ms: int
+    text_fade_start_opacity: float

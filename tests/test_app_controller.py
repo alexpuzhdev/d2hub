@@ -15,20 +15,20 @@ class FakeHud:
         self.closed = False
         self.on_close = None
 
-    def set_warning(self, level: str | bool) -> None:
+    def set_warning(self, text: str | None, level: str | None = None) -> None:
         """Принимает уровень предупреждения."""
 
     def set_timer(self, text: str) -> None:
         """Принимает текст таймера."""
 
-    def set_now(self, text: str) -> None:
+    def set_now(self, text: str, level: str | None = None) -> None:
         """Принимает текст NOW."""
 
-    def set_next(self, text: str) -> None:
+    def set_next(self, text: str, level: str | None = None) -> None:
         """Принимает текст NEXT."""
 
-    def set_after(self, text: str) -> None:
-        """Принимает текст AFTER."""
+    def set_macro(self, text: str, level: str | None = None) -> None:
+        """Принимает текст MACRO."""
 
     def every(self, ms: int, fn: Callable[[], None]) -> None:
         """Принимает планирование таймера."""
