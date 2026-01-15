@@ -22,15 +22,18 @@ class HudConfig:
     font_family: str = "Segoe UI"
     font_size: int = 18
     font_weight: str = "bold"
+    margin_horizontal: int = 20
+    margin_vertical: int = 18
+    spacing: int = 8
+    block_padding: int = 6
+    text_fade_duration_ms: int = 220
+    text_fade_start_opacity: float = 0.6
 
 
 @dataclass(frozen=True)
 class HotkeysConfig:
     """Настройки горячих клавиш."""
 
-    start: str = "F8"
-    stop: str = "F9"
-    reset: str = "F10"
     lock: str = "F7"
 
 
@@ -48,6 +51,8 @@ class LogIntegrationConfig:
     )
     poll_interval_ms: int = 100
     debounce_seconds: float = 5.0
+    resync_threshold_seconds: int = 6
+    gsi_timeout_seconds: int = 6
 
 
 @dataclass(frozen=True)
@@ -60,3 +65,13 @@ class AppConfig:
     buckets: List[Bucket]
     windows: List[WarningWindow]
     macro_timings: List[MacroTiming]
+    presenter: "PresenterConfig"
+
+
+@dataclass(frozen=True)
+class PresenterConfig:
+    """Настройки форматирования текстов."""
+
+    max_lines: int = 2
+    macro_max_lines: int = 6
+    macro_hints: List[str] = field(default_factory=list)
