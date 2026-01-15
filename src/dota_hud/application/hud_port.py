@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Callable, Protocol
 
+from .models import MacroLine
+
 
 class HudViewPort(Protocol):
     """Интерфейс UI HUD для слоя приложения."""
@@ -12,14 +14,19 @@ class HudViewPort(Protocol):
     def set_timer(self, text: str) -> None:
         """Обновляет текст таймера."""
 
-    def set_now(self, text: str) -> None:
+    def set_now(self, text: str, level: str | None = None) -> None:
         """Обновляет блок NOW."""
 
-    def set_next(self, text: str) -> None:
+    def set_next(self, text: str, level: str | None = None) -> None:
         """Обновляет блок NEXT."""
 
-    def set_after(self, text: str) -> None:
-        """Обновляет блок AFTER."""
+    def set_macro(
+        self,
+        text: str,
+        level: str | None = None,
+        lines: list["MacroLine"] | None = None,
+    ) -> None:
+        """Обновляет блок MACRO."""
 
 
 class HudSchedulePort(Protocol):
