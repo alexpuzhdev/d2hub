@@ -19,6 +19,12 @@ class HudQt(QtWidgets.QWidget):
 
         super().__init__()
 
+        self._instance_guard = QtCore.QSharedMemory("dota_hud_singleton")
+        if self._instance_guard.attach():
+            raise RuntimeError("HUD instance is already running.")
+        if not self._instance_guard.create(1):
+            raise RuntimeError("Failed to acquire HUD instance lock.")
+
         self._style = style
         self._colors = default_colors()
         self._warning_level = ""
@@ -35,6 +41,16 @@ class HudQt(QtWidgets.QWidget):
         self._configure_window()
         self._build_layout()
         self._apply_text_colors()
+        self._close_extra_windows()
+        QtCore.QTimer.singleShot(0, self._close_extra_windows)
+        QtCore.QTimer.singleShot(500, self._close_extra_windows)
+
+    def _close_extra_windows(self) -> None:
+        for widget in QtWidgets.QApplication.topLevelWidgets():
+            if widget is self:
+                continue
+            if isinstance(widget, QtWidgets.QWidget):
+                widget.close()
 
     def _configure_window(self) -> None:
         self.setWindowTitle(self._style.title)
@@ -79,7 +95,6 @@ class HudQt(QtWidgets.QWidget):
         layout.addWidget(self.warning)
         layout.addWidget(self.now)
         layout.addWidget(self.next)
-        layout.addWidget(self.after)
         layout.addStretch(1)
 
         self.setLayout(layout)
