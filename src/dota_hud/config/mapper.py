@@ -73,6 +73,7 @@ def _load_macro_timings(raw: list[dict] | None) -> list[MacroTiming]:
                 first_spawn=_seconds_from_value(item.get("first_spawn", 0)),
                 interval=_seconds_from_value(item.get("interval", 0)),
                 up_window=_seconds_from_value(item.get("up_window", 0)),
+                color=str(item.get("color")).strip() or None,
             )
         )
     return timings

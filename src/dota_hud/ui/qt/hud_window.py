@@ -5,6 +5,7 @@ from typing import Callable, Optional
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from ..hud_style import HudStyle
+from ...application.models import MacroLine
 from .styles import default_colors
 
 
@@ -81,14 +82,20 @@ class HudQt(QtWidgets.QWidget):
         self.next = QtWidgets.QLabel("ДАЛЕЕ: —")
         self._configure_block_label(self.next, self._style.font_size)
 
-        self.macro = QtWidgets.QLabel("MACRO: —")
-        self._configure_block_label(self.macro, self._style.font_size)
+        self.macro_title = QtWidgets.QLabel("MACRO:")
+        self._configure_block_label(self.macro_title, self._style.font_size)
+        self.macro_lines_container = QtWidgets.QWidget()
+        self.macro_lines_layout = QtWidgets.QVBoxLayout(self.macro_lines_container)
+        self.macro_lines_layout.setContentsMargins(0, 0, 0, 0)
+        self.macro_lines_layout.setSpacing(4)
+        self._macro_line_widgets: list[QtWidgets.QProgressBar] = []
 
         layout.addWidget(self.timer)
         layout.addWidget(self.warning)
         layout.addWidget(self.now)
         layout.addWidget(self.next)
-        layout.addWidget(self.macro)
+        layout.addWidget(self.macro_title)
+        layout.addWidget(self.macro_lines_container)
         layout.addStretch(1)
 
         self.setLayout(layout)
@@ -133,6 +140,18 @@ class HudQt(QtWidgets.QWidget):
             "}"
         )
 
+    def _progress_style(self, color: QtGui.QColor) -> str:
+        return (
+            "QProgressBar {"
+            "border: none;"
+            "background: transparent;"
+            "text-align: left;"
+            "}"
+            "QProgressBar::chunk {"
+            f"background-color: {self._rgba(color, 160)};"
+            "}"
+        )
+
     def _configure_block_label(
         self,
         label: QtWidgets.QLabel,
@@ -144,6 +163,14 @@ class HudQt(QtWidgets.QWidget):
         label.setFont(self._font(size, weight))
         label.setAttribute(QtCore.Qt.WA_TranslucentBackground, True)
         label.setTextInteractionFlags(QtCore.Qt.NoTextInteraction)
+
+    def _configure_macro_progress(self, bar: QtWidgets.QProgressBar) -> None:
+        bar.setRange(0, 100)
+        bar.setTextVisible(True)
+        bar.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
+        bar.setFormat("")
+        bar.setFixedHeight(self._style.font_size + 6)
+        bar.setFont(self._font(self._style.font_size, "normal"))
 
     def _apply_text_colors(self) -> None:
         self.timer.setStyleSheet(self._label_style(self._colors.text_primary))
@@ -163,7 +190,7 @@ class HudQt(QtWidgets.QWidget):
                 padding=self._style.block_padding,
             )
         )
-        self.macro.setStyleSheet(
+        self.macro_title.setStyleSheet(
             self._label_style(
                 self._colors.text_primary,
                 background=self._block_background_color("macro"),
@@ -415,10 +442,56 @@ class HudQt(QtWidgets.QWidget):
         self._set_block_level("next", level)
         self._resize_to_content()
 
-    def set_macro(self, text: str, level: str | None = None) -> None:
+    def _parse_macro_color(self, value: str | None) -> QtGui.QColor:
+        if not value:
+            return self._colors.block_background
+        color = QtGui.QColor(str(value))
+        if not color.isValid():
+            return self._colors.block_background
+        return color
+
+    def _apply_macro_lines(self, lines: list["MacroLine"]) -> None:
+        for widget in self._macro_line_widgets:
+            self.macro_lines_layout.removeWidget(widget)
+            widget.deleteLater()
+        self._macro_line_widgets.clear()
+
+        if not lines:
+            fallback = QtWidgets.QLabel("MACRO: —")
+            self._configure_block_label(fallback, self._style.font_size)
+            fallback.setStyleSheet(
+                self._label_style(
+                    self._colors.text_primary,
+                    background=self._block_background_color("macro"),
+                    background_alpha=120,
+                    padding=self._style.block_padding,
+                )
+            )
+            self.macro_lines_layout.addWidget(fallback)
+            self._macro_line_widgets.append(fallback)
+            return
+
+        for line in lines:
+            bar = QtWidgets.QProgressBar()
+            self._configure_macro_progress(bar)
+            bar.setFormat(line.text)
+            progress = int((line.progress or 0.0) * 100)
+            bar.setValue(progress)
+            color = self._parse_macro_color(line.color)
+            bar.setStyleSheet(self._progress_style(color))
+            self.macro_lines_layout.addWidget(bar)
+            self._macro_line_widgets.append(bar)
+
+    def set_macro(
+        self,
+        text: str,
+        level: str | None = None,
+        lines: list["MacroLine"] | None = None,
+    ) -> None:
         """Обновляет блок MACRO."""
-        self.macro.setText(text)
+        self.macro_title.setText("MACRO:")
         self._set_block_level("macro", level)
+        self._apply_macro_lines(lines or [])
         self._resize_to_content()
 
     def every(self, ms: int, fn: Callable[[], None]) -> None:

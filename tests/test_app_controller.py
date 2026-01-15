@@ -27,7 +27,12 @@ class FakeHud:
     def set_next(self, text: str, level: str | None = None) -> None:
         """Принимает текст NEXT."""
 
-    def set_macro(self, text: str, level: str | None = None) -> None:
+    def set_macro(
+        self,
+        text: str,
+        level: str | None = None,
+        lines: list[object] | None = None,
+    ) -> None:
         """Принимает текст MACRO."""
 
     def every(self, ms: int, fn: Callable[[], None]) -> None:

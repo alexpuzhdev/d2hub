@@ -15,6 +15,15 @@ class WarningState:
 
 
 @dataclass(frozen=True)
+class MacroLine:
+    """Строка макро-тайминга с прогрессом."""
+
+    text: str
+    progress: float | None = None
+    color: str | None = None
+
+
+@dataclass(frozen=True)
 class HudState:
     """Состояние HUD для передачи в слой представления."""
 
@@ -25,6 +34,7 @@ class HudState:
     next_level: str | None
     macro_text: str
     macro_level: str | None
+    macro_lines: tuple[MacroLine, ...]
     warning: WarningState
 
 

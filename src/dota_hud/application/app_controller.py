@@ -128,6 +128,10 @@ class AppController:
             )
 
             self._hud.set_next(view_model.next_text, view_model.next_level)
-            self._hud.set_macro(view_model.macro_text, view_model.macro_level)
+            self._hud.set_macro(
+                view_model.macro_text,
+                view_model.macro_level,
+                list(view_model.macro_lines),
+            )
         except Exception as exc:
             self._hud.set_now(f"HUD error: {exc}")
