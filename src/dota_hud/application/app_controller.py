@@ -44,6 +44,8 @@ class AppController:
             warning_service=self._warning_service,
             presenter=self._presenter,
             windows=self._config.windows,
+            resync_threshold_seconds=self._config.log_integration.resync_threshold_seconds,
+            gsi_timeout_seconds=self._config.log_integration.gsi_timeout_seconds,
         )
 
         provider = infra_provider or InfraProvider()
@@ -101,6 +103,7 @@ class AppController:
                 GameStateSnapshot(
                     clock_time=gsi_state.clock_time,
                     paused=gsi_state.paused,
+                    updated_at=gsi_state.updated_at,
                 )
                 if gsi_state
                 else None
@@ -110,7 +113,11 @@ class AppController:
             if HudAction.LOCK in actions:
                 self._hud.toggle_lock()
             cycle_actions = [action for action in actions if action is not HudAction.LOCK]
-            cycle = self._cycle.run(game_state, cycle_actions)
+            cycle = self._cycle.run(
+                game_state,
+                cycle_actions,
+                last_heartbeat=self._gsi_state_store.last_heartbeat(),
+            )
             view_model = cycle.hud_state
 
             self._hud.set_timer(view_model.timer_text)

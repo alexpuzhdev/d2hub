@@ -51,6 +51,8 @@ class LogIntegrationConfig:
     )
     poll_interval_ms: int = 100
     debounce_seconds: float = 5.0
+    resync_threshold_seconds: int = 6
+    gsi_timeout_seconds: int = 6
 
 
 @dataclass(frozen=True)

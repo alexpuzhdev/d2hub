@@ -34,3 +34,4 @@ class GameStateSnapshot:
 
     clock_time: int | None
     paused: bool
+    updated_at: float | None = None
