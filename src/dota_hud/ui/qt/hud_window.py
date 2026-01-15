@@ -9,6 +9,58 @@ from ...application.models import MacroLine
 from .styles import default_colors
 
 
+class MacroProgressBar(QtWidgets.QWidget):
+    """Прогресс-бар с градиентной заливкой и скошенным краем."""
+
+    def __init__(
+        self,
+        height: int,
+        text_color: QtGui.QColor,
+        parent: QtWidgets.QWidget | None = None,
+    ) -> None:
+        super().__init__(parent)
+        self._progress = 0.0
+        self._color = QtGui.QColor()
+        self._text = ""
+        self._text_color = text_color
+        self.setFixedHeight(height)
+
+    def set_data(self, text: str, progress: float, color: QtGui.QColor) -> None:
+        self._text = text
+        self._progress = max(0.0, min(1.0, progress))
+        self._color = color
+        self.update()
+
+    def paintEvent(self, event: QtGui.QPaintEvent) -> None:
+        painter = QtGui.QPainter(self)
+        painter.setRenderHint(QtGui.QPainter.Antialiasing, True)
+
+        rect = self.rect()
+        bar_width = int(rect.width() * self._progress)
+        if bar_width > 0:
+            slant = min(10, bar_width)
+            polygon = QtGui.QPolygonF(
+                [
+                    QtCore.QPointF(rect.left(), rect.top()),
+                    QtCore.QPointF(rect.left() + bar_width - slant, rect.top()),
+                    QtCore.QPointF(rect.left() + bar_width, rect.center().y()),
+                    QtCore.QPointF(rect.left() + bar_width - slant, rect.bottom()),
+                    QtCore.QPointF(rect.left(), rect.bottom()),
+                ]
+            )
+            gradient = QtGui.QLinearGradient(rect.left(), 0, rect.left() + bar_width, 0)
+            base = QtGui.QColor(self._color)
+            gradient.setColorAt(0.0, QtGui.QColor(base.red(), base.green(), base.blue(), 140))
+            gradient.setColorAt(1.0, QtGui.QColor(base.red(), base.green(), base.blue(), 60))
+            painter.setPen(QtCore.Qt.NoPen)
+            painter.setBrush(QtGui.QBrush(gradient))
+            painter.drawPolygon(polygon)
+
+        painter.setPen(self._text_color)
+        painter.drawText(rect.adjusted(4, 0, -4, 0), QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter, self._text)
+        painter.end()
+
+
 class HudQt(QtWidgets.QWidget):
     """Окно HUD на базе PySide6."""
 
@@ -90,7 +142,7 @@ class HudQt(QtWidgets.QWidget):
         self.macro_lines_layout = QtWidgets.QVBoxLayout(self.macro_lines_container)
         self.macro_lines_layout.setContentsMargins(0, 0, 0, 0)
         self.macro_lines_layout.setSpacing(self._style.macro_line_spacing)
-        self._macro_line_widgets: list[QtWidgets.QProgressBar] = []
+        self._macro_line_widgets: list[QtWidgets.QWidget] = []
 
         layout.addWidget(self.timer)
         layout.addWidget(self.warning)
@@ -143,18 +195,6 @@ class HudQt(QtWidgets.QWidget):
             "}"
         )
 
-    def _progress_style(self, color: QtGui.QColor) -> str:
-        return (
-            "QProgressBar {"
-            "border: none;"
-            "background: transparent;"
-            "text-align: left;"
-            "}"
-            "QProgressBar::chunk {"
-            f"background-color: {self._rgba(color, 160)};"
-            "}"
-        )
-
     def _configure_block_label(
         self,
         label: QtWidgets.QLabel,
@@ -167,12 +207,7 @@ class HudQt(QtWidgets.QWidget):
         label.setAttribute(QtCore.Qt.WA_TranslucentBackground, True)
         label.setTextInteractionFlags(QtCore.Qt.NoTextInteraction)
 
-    def _configure_macro_progress(self, bar: QtWidgets.QProgressBar) -> None:
-        bar.setRange(0, 100)
-        bar.setTextVisible(True)
-        bar.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
-        bar.setFormat("")
-        bar.setFixedHeight(self._style.macro_bar_height)
+    def _configure_macro_progress(self, bar: MacroProgressBar) -> None:
         bar.setFont(self._font(self._style.font_size, "normal"))
 
     def _apply_text_colors(self) -> None:
@@ -484,13 +519,13 @@ class HudQt(QtWidgets.QWidget):
             return
 
         for line in lines:
-            bar = QtWidgets.QProgressBar()
+            bar = MacroProgressBar(
+                self._style.macro_bar_height,
+                self._colors.text_primary,
+            )
             self._configure_macro_progress(bar)
-            bar.setFormat(line.text)
-            progress = int((line.progress or 0.0) * 100)
-            bar.setValue(progress)
             color = self._parse_macro_color(line.color)
-            bar.setStyleSheet(self._progress_style(color))
+            bar.set_data(line.text, line.progress or 0.0, color)
             self.macro_lines_layout.addWidget(bar)
             self._macro_line_widgets.append(bar)
 
