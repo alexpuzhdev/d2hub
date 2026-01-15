@@ -277,7 +277,12 @@ class HudQt(QtWidgets.QWidget):
     def _resize_to_content(self) -> None:
         if not self._auto_height_enabled:
             return
-        desired_height = max(self._base_height, self.sizeHint().height())
+        if self.layout() is not None:
+            self.layout().activate()
+            content_height = self.layout().sizeHint().height()
+        else:
+            content_height = self.sizeHint().height()
+        desired_height = max(self._base_height, content_height)
         if desired_height > self.height():
             self.resize(self._style.width, desired_height)
 
