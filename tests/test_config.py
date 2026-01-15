@@ -86,8 +86,12 @@ def test_build_style_from_config(tmp_path: Path) -> None:
         block_padding=cfg.hud.block_padding,
         text_fade_duration_ms=cfg.hud.text_fade_duration_ms,
         text_fade_start_opacity=cfg.hud.text_fade_start_opacity,
+        macro_line_spacing=cfg.hud.macro_line_spacing,
+        macro_bar_height=cfg.hud.macro_bar_height,
+        macro_show_title=cfg.hud.macro_show_title,
     )
 
     assert style.title == cfg.hud.title
     assert style.width == cfg.hud.width
     assert style.block_padding == cfg.hud.block_padding
+    assert style.macro_line_spacing == cfg.hud.macro_line_spacing

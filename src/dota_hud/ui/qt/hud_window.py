@@ -87,14 +87,15 @@ class HudQt(QtWidgets.QWidget):
         self.macro_lines_container = QtWidgets.QWidget()
         self.macro_lines_layout = QtWidgets.QVBoxLayout(self.macro_lines_container)
         self.macro_lines_layout.setContentsMargins(0, 0, 0, 0)
-        self.macro_lines_layout.setSpacing(4)
+        self.macro_lines_layout.setSpacing(self._style.macro_line_spacing)
         self._macro_line_widgets: list[QtWidgets.QProgressBar] = []
 
         layout.addWidget(self.timer)
         layout.addWidget(self.warning)
         layout.addWidget(self.now)
         layout.addWidget(self.next)
-        layout.addWidget(self.macro_title)
+        if self._style.macro_show_title:
+            layout.addWidget(self.macro_title)
         layout.addWidget(self.macro_lines_container)
         layout.addStretch(1)
 
@@ -169,7 +170,7 @@ class HudQt(QtWidgets.QWidget):
         bar.setTextVisible(True)
         bar.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
         bar.setFormat("")
-        bar.setFixedHeight(self._style.font_size + 6)
+        bar.setFixedHeight(self._style.macro_bar_height)
         bar.setFont(self._font(self._style.font_size, "normal"))
 
     def _apply_text_colors(self) -> None:
@@ -489,7 +490,8 @@ class HudQt(QtWidgets.QWidget):
         lines: list["MacroLine"] | None = None,
     ) -> None:
         """Обновляет блок MACRO."""
-        self.macro_title.setText("MACRO:")
+        if self._style.macro_show_title:
+            self.macro_title.setText("MACRO:")
         self._set_block_level("macro", level)
         self._apply_macro_lines(lines or [])
         self._resize_to_content()

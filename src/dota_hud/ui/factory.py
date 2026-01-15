@@ -27,6 +27,9 @@ class UiFactory:
             block_padding=config.block_padding,
             text_fade_duration_ms=config.text_fade_duration_ms,
             text_fade_start_opacity=config.text_fade_start_opacity,
+            macro_line_spacing=config.macro_line_spacing,
+            macro_bar_height=config.macro_bar_height,
+            macro_show_title=config.macro_show_title,
         )
 
         if ui_name == "qt":

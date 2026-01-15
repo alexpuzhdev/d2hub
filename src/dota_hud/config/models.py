@@ -28,6 +28,9 @@ class HudConfig:
     block_padding: int = 6
     text_fade_duration_ms: int = 220
     text_fade_start_opacity: float = 0.6
+    macro_line_spacing: int = 4
+    macro_bar_height: int = 24
+    macro_show_title: bool = True
 
 
 @dataclass(frozen=True)

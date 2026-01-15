@@ -22,3 +22,6 @@ class HudStyle:
     block_padding: int
     text_fade_duration_ms: int
     text_fade_start_opacity: float
+    macro_line_spacing: int
+    macro_bar_height: int
+    macro_show_title: bool
