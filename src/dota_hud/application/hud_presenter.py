@@ -48,16 +48,15 @@ class HudPresenter:
                 f"{self._format_items(tick_state.next_event.items)}"
             )
 
-        macro_text = ""
         macro_lines = build_macro_lines(tick_state.elapsed, self._config.macro_timings)
         if macro_lines:
-            macro_text = "\n".join(["MACRO:", *macro_lines])
+            next_text = "\n".join([next_text, "MACRO:", *macro_lines])
 
         return HudState(
             timer_text=format_mmss(tick_state.elapsed),
             now_text=event_text,
             next_text=next_text,
-            after_text=macro_text,
+            after_text="",
             warning=WarningState(
                 text=warning_text,
                 level=warning_level,
