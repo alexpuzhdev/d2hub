@@ -22,7 +22,7 @@ class HudQt(QtWidgets.QWidget):
         self._style = style
         self._colors = default_colors()
         self._warning_level = ""
-        self._warning_overlay_strength = 0.0
+        self._warning_block_strength = 0.0
         self._warning_anim: Optional[QtCore.QPropertyAnimation] = None
         self._locked = False
         self._drag_enabled = True
@@ -173,6 +173,8 @@ class HudQt(QtWidgets.QWidget):
             warning_color = self._colors.text_primary
             warning_bg = None
             warning_bg_alpha = None
+        if warning_bg_alpha is not None:
+            warning_bg_alpha = int(warning_bg_alpha * self._warning_block_strength)
         self.warning.setStyleSheet(
             self._label_style(
                 warning_color,
@@ -218,81 +220,36 @@ class HudQt(QtWidgets.QWidget):
 
         painter.fillRect(rect, gradient)
 
-        overlay_strength = self._warning_overlay_strength
-        if overlay_strength > 0:
-            if self._warning_level == "danger":
-                overlay_color = self._colors.warning_overlay_danger
-            elif self._warning_level == "warn":
-                overlay_color = self._colors.warning_overlay_warn
-            elif self._warning_level == "info":
-                overlay_color = self._colors.block_background
-            else:
-                overlay_color = None
-        if overlay_strength > 0 and overlay_color is not None:
-            overlay_alpha = min(255, int(max_alpha * overlay_strength))
-            overlay_gradient = QtGui.QLinearGradient(
-                rect.left(),
-                0,
-                rect.right(),
-                0,
-            )
-            overlay_gradient.setColorAt(
-                0.0,
-                QtGui.QColor(
-                    overlay_color.red(),
-                    overlay_color.green(),
-                    overlay_color.blue(),
-                    overlay_alpha,
-                ),
-            )
-            overlay_gradient.setColorAt(
-                0.7,
-                QtGui.QColor(
-                    overlay_color.red(),
-                    overlay_color.green(),
-                    overlay_color.blue(),
-                    int(overlay_alpha * 0.15),
-                ),
-            )
-            overlay_gradient.setColorAt(
-                1.0,
-                QtGui.QColor(
-                    overlay_color.red(),
-                    overlay_color.green(),
-                    overlay_color.blue(),
-                    0,
-                ),
-            )
-            painter.fillRect(rect, overlay_gradient)
         painter.end()
 
-    def _target_overlay_strength(self) -> float:
+    def _target_warning_strength(self) -> float:
         if self._warning_level == "danger":
-            return 0.65
+            return 1.0
         if self._warning_level == "warn":
-            return 0.45
+            return 1.0
         if self._warning_level == "info":
-            return 0.2
+            return 0.6
         return 0.0
 
     def _animate_warning_overlay(self) -> None:
-        target = self._target_overlay_strength()
+        target = self._target_warning_strength()
         if self._warning_anim is None:
-            self._warning_anim = QtCore.QPropertyAnimation(self, b"warningOverlayStrength")
+            self._warning_anim = QtCore.QPropertyAnimation(self, b"warningBlockStrength")
             self._warning_anim.setDuration(450)
             self._warning_anim.setEasingCurve(QtCore.QEasingCurve.InOutQuad)
         self._warning_anim.stop()
-        self._warning_anim.setStartValue(self._warning_overlay_strength)
+        self._warning_anim.setStartValue(self._warning_block_strength)
         self._warning_anim.setEndValue(target)
         self._warning_anim.start()
 
     @QtCore.Property(float)
-    def warningOverlayStrength(self) -> float:
-        return self._warning_overlay_strength
+    def warningBlockStrength(self) -> float:
+        return self._warning_block_strength
 
-    @warningOverlayStrength.setter
-    def warningOverlayStrength(self, value: float) -> None:
-        self._warning_overlay_strength = max(0.0, min(1.0, float(value)))
+    @warningBlockStrength.setter
+    def warningBlockStrength(self, value: float) -> None:
+        self._warning_block_strength = max(0.0, min(1.0, float(value)))
+        self._apply_text_colors()
         self.update()
 
     def _set_clickthrough(self, enabled: bool) -> None:
