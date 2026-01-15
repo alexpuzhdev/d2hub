@@ -18,4 +18,6 @@ def load_config(path: Path) -> AppConfig:
             data["macro_timings"] = macro_data
         elif isinstance(macro_data, dict):
             data["macro_timings"] = macro_data.get("macro_timings", [])
+            if "macro_hints" in macro_data and not data.get("macro_hints"):
+                data["macro_hints"] = macro_data.get("macro_hints", [])
     return map_config(data)

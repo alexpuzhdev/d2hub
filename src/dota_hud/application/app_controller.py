@@ -32,7 +32,12 @@ class AppController:
         self._scheduler = Scheduler(config.buckets)
         self._warning_service = WarningWindowService()
         self._presenter = HudPresenter(
-            PresenterConfig(macro_timings=tuple(self._config.macro_timings))
+            PresenterConfig(
+                max_lines=self._config.presenter.max_lines,
+                macro_max_lines=self._config.presenter.macro_max_lines,
+                macro_timings=tuple(self._config.macro_timings),
+                macro_hints=tuple(self._config.presenter.macro_hints),
+            )
         )
         self._cycle = HudCycleUseCase(
             scheduler=self._scheduler,

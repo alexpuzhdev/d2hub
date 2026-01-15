@@ -57,3 +57,13 @@ class AppConfig:
     buckets: List[Bucket]
     windows: List[WarningWindow]
     macro_timings: List[MacroTiming]
+    presenter: "PresenterConfig"
+
+
+@dataclass(frozen=True)
+class PresenterConfig:
+    """Настройки форматирования текстов."""
+
+    max_lines: int = 2
+    macro_max_lines: int = 6
+    macro_hints: List[str] = field(default_factory=list)
