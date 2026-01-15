@@ -3,9 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from ..domain.events import format_mmss
-from ..domain.macro_info import DEFAULT_MACRO_TIMINGS, MacroTiming, build_macro_lines
+from ..domain.macro_info import DEFAULT_MACRO_TIMINGS, MacroTiming
 from ..domain.scheduler import TickState
-from .models import HudState, WarningState
+from .models import HudState, MacroLine, WarningState
 
 
 @dataclass(frozen=True)
@@ -13,7 +13,9 @@ class PresenterConfig:
     """Настройки отображения текстовых блоков."""
 
     max_lines: int = 2
+    macro_max_lines: int = 6
     macro_timings: tuple[MacroTiming, ...] = DEFAULT_MACRO_TIMINGS
+    macro_hints: tuple[str, ...] = ()
 
 
 class HudPresenter:
@@ -33,11 +35,11 @@ class HudPresenter:
         event_text = None
         if tick_state.now:
             event_text = (
-                f"NOW @ {format_mmss(tick_state.now.t)}\n"
+                f"СЕЙЧАС {format_mmss(tick_state.now.t)}\n"
                 f"{self._format_items(tick_state.now.items)}"
             )
         if event_text is None:
-            event_text = "NOW: —"
+            event_text = "СЕЙЧАС: —"
 
         next_text = "ДАЛЕЕ: —"
         if tick_state.next_event:
@@ -47,22 +49,20 @@ class HudPresenter:
                 f"{self._format_items(tick_state.next_event.items)}"
             )
 
-        after_text = "ПОТОМ: —"
-        if tick_state.after_event:
-            after_text = (
-                f"ПОТОМ {format_mmss(tick_state.after_event.t)}\n"
-                f"{self._format_items(tick_state.after_event.items)}"
-            )
-
-        macro_lines = build_macro_lines(tick_state.elapsed, self._config.macro_timings)
+        macro_lines = self._build_macro_lines(tick_state)
+        macro_text = "MACRO: —"
         if macro_lines:
-            after_text = "\n".join([after_text, "MACRO:", *macro_lines])
+            macro_text = "\n".join(["MACRO:", *[line.text for line in macro_lines]])
 
         return HudState(
             timer_text=format_mmss(tick_state.elapsed),
             now_text=event_text,
+            now_level=None,
             next_text=next_text,
-            after_text=after_text,
+            next_level=None,
+            macro_text=macro_text,
+            macro_level=None,
+            macro_lines=tuple(macro_lines),
             warning=WarningState(text=warning_text, level=warning_level),
         )
 
@@ -73,3 +73,30 @@ class HudPresenter:
                 f"• +{len(items) - self._config.max_lines} ещё"
             ]
         return "\n".join(lines)
+
+    @staticmethod
+    def _limit_lines(lines: list[str], max_lines: int) -> list[str]:
+        if max_lines <= 0 or len(lines) <= max_lines:
+            return lines
+        return lines[:max_lines] + [f"+{len(lines) - max_lines} ещё"]
+
+    def _build_macro_lines(self, tick_state: TickState) -> list[MacroLine]:
+        timing_lines: list[MacroLine] = []
+        for timing in self._config.macro_timings:
+            text = f"{timing.name}: {timing.status(tick_state.elapsed)}"
+            timing_lines.append(
+                MacroLine(
+                    text=text,
+                    progress=timing.progress(tick_state.elapsed),
+                    color=timing.color,
+                )
+            )
+        hint_lines = [MacroLine(text=hint) for hint in self._config.macro_hints]
+        combined = [*timing_lines, *hint_lines]
+        if self._config.macro_max_lines <= 0 or len(combined) <= self._config.macro_max_lines:
+            return combined
+        trimmed = combined[: self._config.macro_max_lines]
+        trimmed.append(
+            MacroLine(text=f"+{len(combined) - self._config.macro_max_lines} ещё")
+        )
+        return trimmed
