@@ -205,6 +205,7 @@ class HudQt(QtWidgets.QWidget):
         label.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop)
         label.setFont(self._font(size, weight))
         label.setAttribute(QtCore.Qt.WA_TranslucentBackground, True)
+        label.setAttribute(QtCore.Qt.WA_StyledBackground, True)
         label.setTextInteractionFlags(QtCore.Qt.NoTextInteraction)
 
     def _configure_macro_progress(self, bar: MacroProgressBar) -> None:
