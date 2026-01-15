@@ -63,11 +63,17 @@ def _load_macro_timings(raw: list[dict] | None) -> list[MacroTiming]:
     return timings
 
 
+def _load_hotkeys(raw: dict | None) -> HotkeysConfig:
+    if not raw:
+        return HotkeysConfig()
+    return HotkeysConfig(lock=str(raw.get("lock", HotkeysConfig().lock)))
+
+
 def map_config(data: dict) -> AppConfig:
     """Преобразует словарь YAML в конфигурацию приложения."""
     hud_data = dict(data.get("hud", {}) or {})
     hud = HudConfig(**hud_data)
-    hotkeys = HotkeysConfig(**(data.get("hotkeys", {}) or {}))
+    hotkeys = _load_hotkeys(dict(data.get("hotkeys", {}) or {}))
     log_data = dict(data.get("log_integration", {}) or {})
     if log_data.get("start_patterns") is None:
         log_data.pop("start_patterns", None)
