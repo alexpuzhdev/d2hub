@@ -28,9 +28,6 @@ class HudConfig:
 class HotkeysConfig:
     """Настройки горячих клавиш."""
 
-    start: str = "F8"
-    stop: str = "F9"
-    reset: str = "F10"
     lock: str = "F7"
 
 
