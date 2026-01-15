@@ -5,6 +5,7 @@ from typing import Callable, Optional
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from ..hud_style import HudStyle
+from ...application.models import MacroLine
 from .styles import default_colors
 
 
@@ -22,6 +23,17 @@ class HudQt(QtWidgets.QWidget):
         self._style = style
         self._colors = default_colors()
         self._warning_level = ""
+        self._warning_block_strength = 0.0
+        self._warning_anim: Optional[QtCore.QPropertyAnimation] = None
+        self._warning_hold_timer = QtCore.QTimer(self)
+        self._warning_hold_timer.setSingleShot(True)
+        self._last_warning_text = ""
+        self._last_warning_level = ""
+        self._block_levels = {"now": "", "next": "", "macro": ""}
+        self._block_strengths = {"now": 0.0, "next": 0.0, "macro": 0.0}
+        self._block_anims: dict[str, QtCore.QVariantAnimation] = {}
+        self._auto_height_enabled = True
+        self._base_height = style.height
         self._locked = False
         self._drag_enabled = True
         self._drag_offset = QtCore.QPoint()
@@ -49,8 +61,13 @@ class HudQt(QtWidgets.QWidget):
 
     def _build_layout(self) -> None:
         layout = QtWidgets.QVBoxLayout()
-        layout.setContentsMargins(20, 18, 20, 18)
-        layout.setSpacing(8)
+        layout.setContentsMargins(
+            self._style.margin_horizontal,
+            self._style.margin_vertical,
+            self._style.margin_horizontal,
+            self._style.margin_vertical,
+        )
+        layout.setSpacing(self._style.spacing)
 
         self.timer = QtWidgets.QLabel("0:00")
         self.timer.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
@@ -59,26 +76,27 @@ class HudQt(QtWidgets.QWidget):
         self.warning = QtWidgets.QLabel("")
         self._configure_block_label(self.warning, self._style.font_size)
 
-        self.now = QtWidgets.QLabel(
-            "ГОТОВО  |  F8 СТАРТ  F9 СТОП  F10 СБРОС  F7 БЛОК"
-        )
+        self.now = QtWidgets.QLabel("ГОТОВО  |  F7 LOCK")
         self._configure_block_label(self.now, self._style.font_size)
 
         self.next = QtWidgets.QLabel("ДАЛЕЕ: —")
         self._configure_block_label(self.next, self._style.font_size)
 
-        self.after = QtWidgets.QLabel("ПОТОМ: —")
-        self._configure_block_label(
-            self.after,
-            self._style.font_size,
-            weight="normal",
-        )
+        self.macro_title = QtWidgets.QLabel("MACRO:")
+        self._configure_block_label(self.macro_title, self._style.font_size)
+        self.macro_lines_container = QtWidgets.QWidget()
+        self.macro_lines_layout = QtWidgets.QVBoxLayout(self.macro_lines_container)
+        self.macro_lines_layout.setContentsMargins(0, 0, 0, 0)
+        self.macro_lines_layout.setSpacing(self._style.macro_line_spacing)
+        self._macro_line_widgets: list[QtWidgets.QProgressBar] = []
 
         layout.addWidget(self.timer)
         layout.addWidget(self.warning)
         layout.addWidget(self.now)
         layout.addWidget(self.next)
-        layout.addWidget(self.after)
+        if self._style.macro_show_title:
+            layout.addWidget(self.macro_title)
+        layout.addWidget(self.macro_lines_container)
         layout.addStretch(1)
 
         self.setLayout(layout)
@@ -97,11 +115,41 @@ class HudQt(QtWidgets.QWidget):
         return QtGui.QFont.Weight.Normal
 
     @staticmethod
-    def _label_style(color: QtGui.QColor) -> str:
+    def _rgba(color: QtGui.QColor, alpha: int | None = None) -> str:
+        alpha_value = color.alpha() if alpha is None else alpha
+        return f"rgba({color.red()}, {color.green()}, {color.blue()}, {alpha_value})"
+
+    def _label_style(
+        self,
+        color: QtGui.QColor,
+        background: QtGui.QColor | None = None,
+        background_alpha: int | None = None,
+        padding: int = 0,
+    ) -> str:
+        background_style = ""
+        if background is not None:
+            background_style = (
+                f"background-color: {self._rgba(background, background_alpha)};"
+                "border-radius: 4px;"
+            )
+        padding_style = f"padding: {padding}px;" if padding else ""
         return (
             "QLabel {"
-            f"color: rgba({color.red()}, {color.green()}, {color.blue()}, 255);"
+            f"color: {self._rgba(color)};"
+            f"{background_style}"
+            f"{padding_style}"
+            "}"
+        )
+
+    def _progress_style(self, color: QtGui.QColor) -> str:
+        return (
+            "QProgressBar {"
+            "border: none;"
             "background: transparent;"
+            "text-align: left;"
+            "}"
+            "QProgressBar::chunk {"
+            f"background-color: {self._rgba(color, 160)};"
             "}"
         )
 
@@ -115,21 +163,75 @@ class HudQt(QtWidgets.QWidget):
         label.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop)
         label.setFont(self._font(size, weight))
         label.setAttribute(QtCore.Qt.WA_TranslucentBackground, True)
+        label.setTextInteractionFlags(QtCore.Qt.NoTextInteraction)
+
+    def _configure_macro_progress(self, bar: QtWidgets.QProgressBar) -> None:
+        bar.setRange(0, 100)
+        bar.setTextVisible(True)
+        bar.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
+        bar.setFormat("")
+        bar.setFixedHeight(self._style.macro_bar_height)
+        bar.setFont(self._font(self._style.font_size, "normal"))
 
     def _apply_text_colors(self) -> None:
         self.timer.setStyleSheet(self._label_style(self._colors.text_primary))
-        self.now.setStyleSheet(self._label_style(self._colors.text_primary))
-        self.next.setStyleSheet(self._label_style(self._colors.text_next))
-        self.after.setStyleSheet(self._label_style(self._colors.text_primary))
+        self.now.setStyleSheet(
+            self._label_style(
+                self._colors.text_primary,
+                background=self._block_background_color("now"),
+                background_alpha=140,
+                padding=self._style.block_padding,
+            )
+        )
+        self.next.setStyleSheet(
+            self._label_style(
+                self._colors.text_next,
+                background=self._block_background_color("next"),
+                background_alpha=120,
+                padding=self._style.block_padding,
+            )
+        )
+        self.macro_title.setStyleSheet(
+            self._label_style(
+                self._colors.text_primary,
+                background=self._block_background_color("macro"),
+                background_alpha=120,
+                padding=self._style.block_padding,
+            )
+        )
         if self._warning_level == "danger":
             warning_color = self._colors.text_danger
+            warning_bg = self._colors.warning_block_danger
+            warning_bg_alpha = 140
         elif self._warning_level == "warn":
             warning_color = self._colors.text_warning
+            warning_bg = self._colors.warning_block_warn
+            warning_bg_alpha = 120
         elif self._warning_level == "info":
             warning_color = self._colors.text_info
+            warning_bg = self._colors.block_background
+            warning_bg_alpha = 90
         else:
             warning_color = self._colors.text_primary
-        self.warning.setStyleSheet(self._label_style(warning_color))
+            warning_bg = None
+            warning_bg_alpha = None
+        if warning_bg_alpha is not None:
+            warning_bg_alpha = int(warning_bg_alpha * self._warning_block_strength)
+        self.warning.setStyleSheet(
+            self._label_style(
+                warning_color,
+                background=warning_bg,
+                background_alpha=warning_bg_alpha,
+                padding=self._style.block_padding,
+            )
+        )
+
+    def _resize_to_content(self) -> None:
+        if not self._auto_height_enabled:
+            return
+        desired_height = max(self._base_height, self.sizeHint().height())
+        if desired_height > self.height():
+            self.resize(self._style.width, desired_height)
 
     def paintEvent(self, event: QtGui.QPaintEvent) -> None:
         painter = QtGui.QPainter(self)
@@ -138,7 +240,7 @@ class HudQt(QtWidgets.QWidget):
         rect = self.rect()
 
         base = QtGui.QColor(self._colors.background_base)
-        max_alpha = int(255 * 0.45)  # стартовая прозрачность
+        max_alpha = int(255 * self._style.alpha)  # стартовая прозрачность
 
         gradient = QtGui.QLinearGradient(
             rect.left(),
@@ -153,20 +255,120 @@ class HudQt(QtWidgets.QWidget):
             QtGui.QColor(base.red(), base.green(), base.blue(), max_alpha),
         )
 
-        # середина — уже почти нет
+        # середина — мягкое затухание
         gradient.setColorAt(
-            0.7,
-            QtGui.QColor(base.red(), base.green(), base.blue(), int(max_alpha * 0.15)),
+            0.6,
+            QtGui.QColor(base.red(), base.green(), base.blue(), int(max_alpha * 0.22)),
         )
 
-        # справа — НОЛЬ
+        # справа — почти незаметно
         gradient.setColorAt(
-            1.0,
+            0.9,
             QtGui.QColor(base.red(), base.green(), base.blue(), 0),
         )
 
         painter.fillRect(rect, gradient)
+
         painter.end()
+
+    def _block_background_color(self, key: str) -> QtGui.QColor:
+        base = self._colors.block_background
+        level = self._block_levels.get(key, "")
+        strength = self._block_strengths.get(key, 0.0)
+        if level == "danger":
+            target = self._colors.warning_block_danger
+        elif level == "warn":
+            target = self._colors.warning_block_warn
+        elif level == "info":
+            target = self._colors.block_background
+        else:
+            target = self._colors.block_background
+        return self._blend_colors(base, target, strength)
+
+    @staticmethod
+    def _blend_colors(
+        base: QtGui.QColor,
+        target: QtGui.QColor,
+        strength: float,
+    ) -> QtGui.QColor:
+        strength = max(0.0, min(1.0, float(strength)))
+        red = int(base.red() + (target.red() - base.red()) * strength)
+        green = int(base.green() + (target.green() - base.green()) * strength)
+        blue = int(base.blue() + (target.blue() - base.blue()) * strength)
+        return QtGui.QColor(red, green, blue)
+
+    def _target_block_strength(self, level: str) -> float:
+        if level in {"danger", "warn"}:
+            return 1.0
+        if level == "info":
+            return 0.6
+        return 0.0
+
+    def _set_block_level(self, key: str, level: str | None) -> None:
+        normalized = str(level or "").lower()
+        if self._block_levels.get(key) == normalized:
+            return
+        self._block_levels[key] = normalized
+        target = self._target_block_strength(normalized)
+        anim = self._block_anims.get(key)
+        if anim is None:
+            anim = QtCore.QVariantAnimation(self)
+            anim.setDuration(450)
+            anim.setEasingCurve(QtCore.QEasingCurve.InOutQuad)
+            anim.valueChanged.connect(
+                lambda value, block=key: self._update_block_strength(block, value)
+            )
+            self._block_anims[key] = anim
+        anim.stop()
+        anim.setStartValue(self._block_strengths.get(key, 0.0))
+        anim.setEndValue(target)
+        anim.start()
+
+    def _update_block_strength(self, key: str, value: object) -> None:
+        self._block_strengths[key] = max(0.0, min(1.0, float(value)))
+        self._apply_text_colors()
+        self.update()
+
+    def _target_warning_strength(self) -> float:
+        if self._warning_level == "danger":
+            return 1.0
+        if self._warning_level == "warn":
+            return 1.0
+        if self._warning_level == "info":
+            return 0.6
+        return 0.0
+
+    def _animate_warning_overlay(self) -> None:
+        target = self._target_warning_strength()
+        if self._warning_anim is None:
+            self._warning_anim = QtCore.QPropertyAnimation(self, b"warningBlockStrength")
+            self._warning_anim.setDuration(240)
+            self._warning_anim.setEasingCurve(QtCore.QEasingCurve.InOutQuad)
+        self._warning_anim.stop()
+        self._warning_anim.setStartValue(0.0)
+        self._warning_anim.setEndValue(target)
+        self._warning_anim.start()
+        self._warning_hold_timer.stop()
+        self._warning_hold_timer.timeout.connect(self._fade_warning_overlay)
+        self._warning_hold_timer.start(220)
+
+    def _fade_warning_overlay(self) -> None:
+        if not self._warning_anim:
+            return
+        self._warning_anim.stop()
+        self._warning_anim.setStartValue(self._warning_block_strength)
+        self._warning_anim.setEndValue(0.0)
+        self._warning_anim.start()
+
+    @QtCore.Property(float)
+    def warningBlockStrength(self) -> float:
+        return self._warning_block_strength
+
+    @warningBlockStrength.setter
+    def warningBlockStrength(self, value: float) -> None:
+        self._warning_block_strength = max(0.0, min(1.0, float(value)))
+        self._apply_text_colors()
+        self.update()
 
     def _set_clickthrough(self, enabled: bool) -> None:
         self.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents, enabled)
@@ -206,29 +408,93 @@ class HudQt(QtWidgets.QWidget):
 
     def set_warning(self, text: str | None, level: str | None = None) -> None:
         """Обновляет визуальный уровень предупреждения."""
-        self.warning.setText(text or "")
+        warning_text = text or ""
+        self.warning.setText(warning_text)
         if level is None and isinstance(text, bool):
-            self._warning_level = "warn" if text else ""
+            warning_level = "warn" if text else ""
         else:
-            self._warning_level = str(level or "")
+            warning_level = str(level or "")
+        should_animate = (
+            warning_text != self._last_warning_text
+            or warning_level != self._last_warning_level
+        )
+        self._warning_level = warning_level
+        self._last_warning_text = warning_text
+        self._last_warning_level = warning_level
         self._apply_text_colors()
+        if should_animate:
+            self._animate_warning_overlay()
+        self._resize_to_content()
         self.update()
 
     def set_timer(self, text: str) -> None:
         """Обновляет текст таймера."""
         self.timer.setText(text)
 
-    def set_now(self, text: str) -> None:
+    def set_now(self, text: str, level: str | None = None) -> None:
         """Обновляет блок NOW."""
         self.now.setText(text)
+        self._set_block_level("now", level)
+        self._resize_to_content()
 
-    def set_next(self, text: str) -> None:
+    def set_next(self, text: str, level: str | None = None) -> None:
         """Обновляет блок NEXT."""
         self.next.setText(text)
+        self._set_block_level("next", level)
+        self._resize_to_content()
 
-    def set_after(self, text: str) -> None:
-        """Обновляет блок AFTER."""
-        self.after.setText(text)
+    def _parse_macro_color(self, value: str | None) -> QtGui.QColor:
+        if not value:
+            return self._colors.block_background
+        color = QtGui.QColor(str(value))
+        if not color.isValid():
+            return self._colors.block_background
+        return color
+
+    def _apply_macro_lines(self, lines: list["MacroLine"]) -> None:
+        for widget in self._macro_line_widgets:
+            self.macro_lines_layout.removeWidget(widget)
+            widget.deleteLater()
+        self._macro_line_widgets.clear()
+
+        if not lines:
+            fallback = QtWidgets.QLabel("MACRO: —")
+            self._configure_block_label(fallback, self._style.font_size)
+            fallback.setStyleSheet(
+                self._label_style(
+                    self._colors.text_primary,
+                    background=self._block_background_color("macro"),
+                    background_alpha=120,
+                    padding=self._style.block_padding,
+                )
+            )
+            self.macro_lines_layout.addWidget(fallback)
+            self._macro_line_widgets.append(fallback)
+            return
+
+        for line in lines:
+            bar = QtWidgets.QProgressBar()
+            self._configure_macro_progress(bar)
+            bar.setFormat(line.text)
+            progress = int((line.progress or 0.0) * 100)
+            bar.setValue(progress)
+            color = self._parse_macro_color(line.color)
+            bar.setStyleSheet(self._progress_style(color))
+            self.macro_lines_layout.addWidget(bar)
+            self._macro_line_widgets.append(bar)
+
+    def set_macro(
+        self,
+        text: str,
+        level: str | None = None,
+        lines: list["MacroLine"] | None = None,
+    ) -> None:
+        """Обновляет блок MACRO."""
+        if self._style.macro_show_title:
+            self.macro_title.setText("MACRO:")
+        self._set_block_level("macro", level)
+        self._apply_macro_lines(lines or [])
+        self._resize_to_content()
 
     def every(self, ms: int, fn: Callable[[], None]) -> None:
         """Планирует повторный вызов функции через заданный интервал."""
