@@ -22,15 +22,6 @@ class Hotkeys:
         """Регистрирует горячие клавиши."""
         self.stop()
         self._hooks.append(
-            keyboard.add_hotkey(self._config.start, lambda: self._queue.put(HudAction.START))
-        )
-        self._hooks.append(
-            keyboard.add_hotkey(self._config.stop, lambda: self._queue.put(HudAction.STOP))
-        )
-        self._hooks.append(
-            keyboard.add_hotkey(self._config.reset, lambda: self._queue.put(HudAction.RESET))
-        )
-        self._hooks.append(
             keyboard.add_hotkey(self._config.lock, lambda: self._queue.put(HudAction.LOCK))
         )
 

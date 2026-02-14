@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import threading
 from dataclasses import dataclass
+import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Callable, Optional
 
@@ -14,6 +15,7 @@ class GSIState:
     clock_time: Optional[int] = None
     game_state: Optional[str] = None
     paused: bool = False
+    updated_at: float = 0.0
 
 
 class GSIServer:
@@ -24,11 +26,13 @@ class GSIServer:
         host: str = "127.0.0.1",
         port: int = 4000,
         on_update: Callable[[GSIState], None] | None = None,
+        on_heartbeat: Callable[[], None] | None = None,
     ) -> None:
         """Создаёт сервер GSI."""
         self._host = host
         self._port = port
         self._on_update = on_update
+        self._on_heartbeat = on_heartbeat
         self._lock = threading.Lock()
         self.state = GSIState()
 
@@ -50,15 +54,19 @@ class GSIServer:
                     self.state.clock_time = map_data.get("clock_time")
                     self.state.game_state = map_data.get("game_state")
                     self.state.paused = bool(map_data.get("paused", False))
+                    self.state.updated_at = time.time()
 
                     state_copy = GSIState(
                         clock_time=self.state.clock_time,
                         game_state=self.state.game_state,
                         paused=self.state.paused,
+                        updated_at=self.state.updated_at,
                     )
 
                 if self._on_update:
                     self._on_update(state_copy)
+                if self._on_heartbeat:
+                    self._on_heartbeat()
 
                 print("[GSI]", state_copy)
 

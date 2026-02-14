@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import threading
+import time
 from dataclasses import dataclass
 from typing import Optional
 
@@ -18,16 +19,34 @@ class GsiStateStore:
         """Создаёт хранилище состояния."""
         self._lock = threading.Lock()
         self._state: Optional[GSIState] = None
+        self._last_update_ts: float | None = None
+        self._last_heartbeat_ts: float | None = None
 
     def update(self, state: GSIState) -> None:
         """Обновляет сохранённое состояние GSI."""
         with self._lock:
             self._state = state
+            self._last_update_ts = state.updated_at or time.time()
 
     def get(self) -> Optional[GSIState]:
         """Возвращает текущее состояние GSI."""
         with self._lock:
             return self._state
+
+    def mark_heartbeat(self) -> None:
+        """Фиксирует получение heartbeat от GSI."""
+        with self._lock:
+            self._last_heartbeat_ts = time.time()
+
+    def last_heartbeat(self) -> Optional[float]:
+        """Возвращает время последнего heartbeat."""
+        with self._lock:
+            return self._last_heartbeat_ts
+
+    def last_update(self) -> Optional[float]:
+        """Возвращает время последнего обновления состояния."""
+        with self._lock:
+            return self._last_update_ts
 
 
 @dataclass(frozen=True)
@@ -46,7 +65,10 @@ class InfraProvider:
     def build(self, config: AppConfig) -> InfraServices:
         """Собирает инфраструктурные сервисы."""
         gsi_state_store = GsiStateStore()
-        gsi_server = GSIServer(on_update=gsi_state_store.update)
+        gsi_server = GSIServer(
+            on_update=gsi_state_store.update,
+            on_heartbeat=gsi_state_store.mark_heartbeat,
+        )
         hotkeys = Hotkeys(config.hotkeys)
         log_watcher = self._build_log_watcher(config)
 
