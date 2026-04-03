@@ -32,20 +32,30 @@ cd d2hub
 
 Или скачайте ZIP-архив с GitHub и распакуйте, например в `C:\Games\d2hub`.
 
-### Шаг 3. Создать виртуальное окружение
+### Шаг 3. Установить зависимости (Poetry — рекомендуется)
+```cmd
+pip install poetry
+poetry install
+```
+
+Poetry создаст виртуальное окружение и установит все зависимости из `pyproject.toml` автоматически.
+
+### Шаг 3 (альтернатива). Установить без Poetry
 ```cmd
 python -m venv .venv
 .venv\Scripts\activate
-```
-
-### Шаг 4. Установить зависимости
-```cmd
 pip install --upgrade pip
-pip install PySide6 PyYAML aiohttp
+pip install -r requirements.txt
 ```
 
-### Шаг 5. Проверить установку
+### Шаг 4. Проверить установку
 ```cmd
+poetry run pytest tests/ -v
+```
+
+Или без poetry:
+```cmd
+.venv\Scripts\activate
 python -m pytest tests/ -v
 ```
 
@@ -93,16 +103,22 @@ C:\Program Files (x86)\Steam\steamapps\common\dota 2 beta\game\dota\cfg\gamestat
 
 ## 5) Запуск
 
-### Вариант A: Из исходников (разработка)
+### Вариант A: Через Poetry (рекомендуется)
 ```cmd
 cd C:\Games\d2hub
-.venv\Scripts\activate
-python -m dota_hud
+poetry run dota-hud
 ```
 
 С кастомным конфигом:
 ```cmd
-python -m dota_hud путь\к\timings.yaml
+poetry run dota-hud путь\к\timings.yaml
+```
+
+### Вариант A2: Без Poetry
+```cmd
+cd C:\Games\d2hub
+.venv\Scripts\activate
+python -m dota_hud
 ```
 
 ### Вариант B: Готовый .exe (рекомендуется для обычного использования)

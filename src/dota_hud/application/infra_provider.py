@@ -8,8 +8,6 @@ from typing import Optional
 
 from ..config.models import AppConfig
 from ..infrastructure.gsi_server import GSIServer, GSIState
-from ..infrastructure.hotkeys import Hotkeys
-from ..infrastructure.log_watcher import LogWatcher
 from .ports import GsiServerPort, HotkeysPort, LogWatcherPort
 
 
@@ -75,6 +73,7 @@ class InfraProvider:
             from ..infrastructure.hotkeys_winapi import WinApiHotkeys
             hotkeys: HotkeysPort = WinApiHotkeys(config.hotkeys)
         else:
+            from ..infrastructure.hotkeys import Hotkeys
             hotkeys = Hotkeys(config.hotkeys)
 
         log_watcher = self._build_log_watcher(config)
@@ -87,9 +86,10 @@ class InfraProvider:
         )
 
     @staticmethod
-    def _build_log_watcher(config: AppConfig) -> LogWatcher | None:
+    def _build_log_watcher(config: AppConfig) -> "LogWatcherPort | None":
         if not config.log_integration.enabled:
             return None
+        from ..infrastructure.log_watcher import LogWatcher
         return LogWatcher(
             path=config.log_integration.path,
             start_patterns=config.log_integration.start_patterns,
