@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import json
+import logging
 import threading
 from dataclasses import dataclass
 import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Callable, Optional
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -68,7 +71,7 @@ class GSIServer:
                 if self._on_heartbeat:
                     self._on_heartbeat()
 
-                print("[GSI]", state_copy)
+                logger.debug("GSI state: %s", state_copy)
 
                 inner_self.send_response(200)
                 inner_self.end_headers()
@@ -84,10 +87,10 @@ class GSIServer:
 
     def start(self) -> None:
         """Запускает сервер GSI."""
-        print(f"[GSI] server started on {self._host}:{self._port}")
+        logger.info("GSI server started on %s:%s", self._host, self._port)
         self._thread.start()
 
     def stop(self) -> None:
         """Останавливает сервер GSI."""
-        print("[GSI] server stopped")
+        logger.info("GSI server stopped")
         self._server.shutdown()
