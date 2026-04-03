@@ -148,6 +148,9 @@ class AdminWindow(QtWidgets.QWidget):
         toolbar, self._rules_buttons = self._build_toolbar()
         layout.addWidget(toolbar)
 
+        self._rules_buttons["add"].clicked.connect(self._add_rules_row)
+        self._rules_buttons["delete"].clicked.connect(lambda: self._delete_selected(self.rules_table))
+
         self.rules_table = QtWidgets.QTableWidget(0, 5)
         self.rules_table.setHorizontalHeaderLabels(["Старт", "До", "Каждые (сек)", "Текст", "Роли"])
         self.rules_table.horizontalHeader().setStretchLastSection(True)
@@ -164,6 +167,9 @@ class AdminWindow(QtWidgets.QWidget):
         toolbar, self._windows_buttons = self._build_toolbar()
         layout.addWidget(toolbar)
 
+        self._windows_buttons["add"].clicked.connect(self._add_windows_row)
+        self._windows_buttons["delete"].clicked.connect(lambda: self._delete_selected(self.windows_table))
+
         self.windows_table = QtWidgets.QTableWidget(0, 5)
         self.windows_table.setHorizontalHeaderLabels(["От", "До", "Уровень", "Приоритет", "Текст"])
         self.windows_table.horizontalHeader().setStretchLastSection(True)
@@ -179,6 +185,9 @@ class AdminWindow(QtWidgets.QWidget):
 
         toolbar, self._macro_buttons = self._build_toolbar()
         layout.addWidget(toolbar)
+
+        self._macro_buttons["add"].clicked.connect(self._add_macro_row)
+        self._macro_buttons["delete"].clicked.connect(lambda: self._delete_selected(self.macro_table))
 
         self.macro_table = QtWidgets.QTableWidget(0, 5)
         self.macro_table.setHorizontalHeaderLabels(["Название", "Спавн", "Интервал", "Окно", "Цвет"])
@@ -413,6 +422,46 @@ class AdminWindow(QtWidgets.QWidget):
 
     def delete_selected_timeline_row(self) -> None:
         """Удаляет выбранную строку из timeline."""
-        rows = set(index.row() for index in self.timeline_table.selectedIndexes())
+        self._delete_selected(self.timeline_table)
+
+    @staticmethod
+    def _delete_selected(table: QtWidgets.QTableWidget) -> None:
+        """Удаляет выбранные строки из любой таблицы."""
+        rows = set(index.row() for index in table.selectedIndexes())
         for row in sorted(rows, reverse=True):
-            self.timeline_table.removeRow(row)
+            table.removeRow(row)
+
+    @staticmethod
+    def _add_empty_row(table: QtWidgets.QTableWidget) -> None:
+        """Добавляет пустую строку в таблицу."""
+        row = table.rowCount()
+        table.insertRow(row)
+        for col in range(table.columnCount()):
+            table.setItem(row, col, QtWidgets.QTableWidgetItem(""))
+
+    def _add_rules_row(self) -> None:
+        row = self.rules_table.rowCount()
+        self.rules_table.insertRow(row)
+        self.rules_table.setItem(row, 0, QtWidgets.QTableWidgetItem("0:00"))
+        self.rules_table.setItem(row, 1, QtWidgets.QTableWidgetItem("80:00"))
+        self.rules_table.setItem(row, 2, QtWidgets.QTableWidgetItem("30"))
+        self.rules_table.setItem(row, 3, QtWidgets.QTableWidgetItem(""))
+        self.rules_table.setItem(row, 4, QtWidgets.QTableWidgetItem("все"))
+
+    def _add_windows_row(self) -> None:
+        row = self.windows_table.rowCount()
+        self.windows_table.insertRow(row)
+        self.windows_table.setItem(row, 0, QtWidgets.QTableWidgetItem("0:00"))
+        self.windows_table.setItem(row, 1, QtWidgets.QTableWidgetItem("1:00"))
+        self.windows_table.setItem(row, 2, QtWidgets.QTableWidgetItem("info"))
+        self.windows_table.setItem(row, 3, QtWidgets.QTableWidgetItem("0"))
+        self.windows_table.setItem(row, 4, QtWidgets.QTableWidgetItem(""))
+
+    def _add_macro_row(self) -> None:
+        row = self.macro_table.rowCount()
+        self.macro_table.insertRow(row)
+        self.macro_table.setItem(row, 0, QtWidgets.QTableWidgetItem(""))
+        self.macro_table.setItem(row, 1, QtWidgets.QTableWidgetItem("0:00"))
+        self.macro_table.setItem(row, 2, QtWidgets.QTableWidgetItem("5:00"))
+        self.macro_table.setItem(row, 3, QtWidgets.QTableWidgetItem("0:30"))
+        self.macro_table.setItem(row, 4, QtWidgets.QTableWidgetItem("#8b5cf6"))
