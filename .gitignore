@@ -25,8 +25,6 @@ desktop.ini
 !.env.example
 
 
-build/
-dist/
 *.egg-info/
 
 
