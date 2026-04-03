@@ -1,16 +1,37 @@
+# Dota 2 v7.41a — Macro Timings
 macro_timings:
-  - name: "Wisdom rune"
+  - name: "Wisdom"
     first_spawn: "7:00"
     interval: "7:00"
     up_window: "0:30"
     color: "#8b5cf6"
+
   - name: "Power rune"
     first_spawn: "6:00"
     interval: "2:00"
     up_window: "0:30"
     color: "#3b82f6"
-  - name: "Bounty rune"
+
+  - name: "Bounty"
     first_spawn: "0:00"
-    interval: "3:00"
+    interval: "4:00"
     up_window: "0:30"
     color: "#f59e0b"
+
+  - name: "Catapult"
+    first_spawn: "5:00"
+    interval: "5:00"
+    up_window: "0:15"
+    color: "#ef4444"
+
+  - name: "Tormentor"
+    first_spawn: "20:00"
+    interval: "10:00"
+    up_window: "1:00"
+    color: "#22c55e"
+
+  - name: "Lotus"
+    first_spawn: "3:00"
+    interval: "3:00"
+    up_window: "0:30"
+    color: "#ec4899"

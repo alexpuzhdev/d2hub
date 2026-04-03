@@ -1,16 +1,48 @@
+# Dota 2 v7.41a — Recurring Rules
 rules:
+  # === MAP AWARENESS ===
   - start: "0:00"
     until: "80:00"
     every_seconds: 30
     items:
       - "Чекай миникарту: кто пропал? где сапы? есть ли варды?"
-      - "Сколько врагов видно? Если больше 3 то можно смело толкать зеркально. Если меньше то толкай аккуратно, заставь стянуться врагов к тебе и выйди"
+      - "Сколько врагов видно? Если <3 видно — играй аккуратно"
 
-  - start: "0:00"
-    until: "15:00"
+  # === SUPPORT: STACK CHECK ===
+  - start: "0:30"
+    until: "20:00"
     every_seconds: 60
     items:
-      - "Проверь стак лагерей для керри"
-    roles:
-      - soft_support
-      - hard_support
+      - "Стакни лагерь для керри (стак в :53-:55)"
+    roles: [soft_support, hard_support]
+
+  # === WARD REFRESH ===
+  - start: "6:00"
+    until: "80:00"
+    every_seconds: 360
+    items:
+      - "Обнови OBS варды (они живут 6 минут)"
+    roles: [soft_support, hard_support]
+
+  # === CARRY: FARM CHECK ===
+  - start: "5:00"
+    until: "40:00"
+    every_seconds: 60
+    items:
+      - "Чекни свой GPM: фармишь эффективно? Не стой без дела"
+    roles: [carry]
+
+  # === ROSH CHECK ===
+  - start: "15:00"
+    until: "80:00"
+    every_seconds: 120
+    items:
+      - "Рош: есть возможность? Вард на пит, следи за передвижениями врагов"
+
+  # === PUSH REMINDER ===
+  - start: "10:00"
+    until: "80:00"
+    every_seconds: 120
+    items:
+      - "Расталкивай линии перед командными активностями"
+    roles: [carry, mid]
