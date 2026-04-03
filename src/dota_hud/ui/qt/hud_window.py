@@ -95,8 +95,6 @@ class HudQt(QtWidgets.QWidget):
         self._on_close: Optional[Callable[[], None]] = None
         self._closing = False
 
-        # Dirty-flag tracking to skip redundant repaints
-        self._dirty = False
         self._last_now_text = ""
         self._last_now_level = ""
         self._last_next_text = ""
@@ -516,7 +514,6 @@ class HudQt(QtWidgets.QWidget):
         if text == self._last_timer_text:
             return
         self._last_timer_text = text
-        self._dirty = True
         self.timer.setText(text)
 
     def set_now(self, text: str, level: str | None = None) -> None:
@@ -526,7 +523,6 @@ class HudQt(QtWidgets.QWidget):
             return
         self._last_now_text = text
         self._last_now_level = normalized_level
-        self._dirty = True
         self.now.setText(text)
         self._set_block_level("now", level)
         self._resize_to_content()
@@ -538,7 +534,6 @@ class HudQt(QtWidgets.QWidget):
             return
         self._last_next_text = text
         self._last_next_level = normalized_level
-        self._dirty = True
         self.next.setText(text)
         self._set_block_level("next", level)
         self._resize_to_content()

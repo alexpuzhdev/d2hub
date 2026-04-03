@@ -1,13 +1,13 @@
-"""Tests for HudQt dirty-flag optimisation.
+"""Tests for HudQt skip-on-unchanged optimisation.
 
-The dirty flag prevents redundant Qt repaints when set_now / set_next /
-set_timer are called with unchanged data every 200 ms.
+Verifies that set_now / set_next / set_timer skip calling setText
+when invoked with unchanged data.
 """
 
 from __future__ import annotations
 
 import importlib
-import sys
+from unittest.mock import patch
 
 import pytest
 
@@ -48,83 +48,74 @@ def _make_hud():
 
 # ---- set_now tests ----------------------------------------------------------
 
-class TestSetNowDirtyFlag:
-    def test_same_text_and_level_does_not_set_dirty(self) -> None:
+class TestSetNowSkipBehavior:
+    def test_same_text_and_level_skips_setText(self) -> None:
         hud = _make_hud()
         hud.set_now("hello", "info")
-        hud._dirty = False  # reset after first call
+        with patch.object(hud.now, "setText") as mock_set:
+            hud.set_now("hello", "info")
+            mock_set.assert_not_called()
 
-        hud.set_now("hello", "info")
-        assert hud._dirty is False
-
-    def test_different_text_sets_dirty(self) -> None:
+    def test_different_text_calls_setText(self) -> None:
         hud = _make_hud()
         hud.set_now("hello", "info")
-        hud._dirty = False
+        with patch.object(hud.now, "setText") as mock_set:
+            hud.set_now("world", "info")
+            mock_set.assert_called_once_with("world")
 
-        hud.set_now("world", "info")
-        assert hud._dirty is True
-
-    def test_different_level_sets_dirty(self) -> None:
+    def test_different_level_calls_setText(self) -> None:
         hud = _make_hud()
         hud.set_now("hello", "info")
-        hud._dirty = False
-
-        hud.set_now("hello", "warn")
-        assert hud._dirty is True
+        with patch.object(hud.now, "setText") as mock_set:
+            hud.set_now("hello", "warn")
+            mock_set.assert_called_once_with("hello")
 
     def test_none_level_normalised(self) -> None:
         hud = _make_hud()
         hud.set_now("hello")  # level=None -> ""
-        hud._dirty = False
-
-        hud.set_now("hello", None)
-        assert hud._dirty is False
+        with patch.object(hud.now, "setText") as mock_set:
+            hud.set_now("hello", None)
+            mock_set.assert_not_called()
 
 
 # ---- set_next tests ---------------------------------------------------------
 
-class TestSetNextDirtyFlag:
-    def test_same_text_and_level_does_not_set_dirty(self) -> None:
+class TestSetNextSkipBehavior:
+    def test_same_text_and_level_skips_setText(self) -> None:
         hud = _make_hud()
         hud.set_next("hello", "info")
-        hud._dirty = False
+        with patch.object(hud.next, "setText") as mock_set:
+            hud.set_next("hello", "info")
+            mock_set.assert_not_called()
 
-        hud.set_next("hello", "info")
-        assert hud._dirty is False
-
-    def test_different_text_sets_dirty(self) -> None:
+    def test_different_text_calls_setText(self) -> None:
         hud = _make_hud()
         hud.set_next("hello", "info")
-        hud._dirty = False
+        with patch.object(hud.next, "setText") as mock_set:
+            hud.set_next("world", "info")
+            mock_set.assert_called_once_with("world")
 
-        hud.set_next("world", "info")
-        assert hud._dirty is True
-
-    def test_different_level_sets_dirty(self) -> None:
+    def test_different_level_calls_setText(self) -> None:
         hud = _make_hud()
         hud.set_next("hello", "info")
-        hud._dirty = False
-
-        hud.set_next("hello", "danger")
-        assert hud._dirty is True
+        with patch.object(hud.next, "setText") as mock_set:
+            hud.set_next("hello", "danger")
+            mock_set.assert_called_once_with("hello")
 
 
 # ---- set_timer tests --------------------------------------------------------
 
-class TestSetTimerDirtyFlag:
-    def test_same_text_does_not_set_dirty(self) -> None:
+class TestSetTimerSkipBehavior:
+    def test_same_text_skips_setText(self) -> None:
         hud = _make_hud()
         hud.set_timer("1:30")
-        hud._dirty = False
+        with patch.object(hud.timer, "setText") as mock_set:
+            hud.set_timer("1:30")
+            mock_set.assert_not_called()
 
-        hud.set_timer("1:30")
-        assert hud._dirty is False
-
-    def test_different_text_sets_dirty(self) -> None:
+    def test_different_text_calls_setText(self) -> None:
         hud = _make_hud()
         hud.set_timer("1:30")
-        hud._dirty = False
-
-        hud.set_timer("1:31")
-        assert hud._dirty is True
+        with patch.object(hud.timer, "setText") as mock_set:
+            hud.set_timer("1:31")
+            mock_set.assert_called_once_with("1:31")
