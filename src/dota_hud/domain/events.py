@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass(frozen=True)
@@ -9,6 +9,7 @@ class Bucket:
 
     t: int
     items: list[str]
+    roles: list[str] = field(default_factory=list)
 
 
 def mmss_to_seconds(value: str) -> int:

@@ -116,15 +116,23 @@ def map_config(data: dict) -> AppConfig:
     log_integration = LogIntegrationConfig(**log_data)
 
     buckets_map: Dict[int, list[str]] = {}
+    roles_map: Dict[int, list[str]] = {}
     for bucket in (data.get("timeline", []) or []):
         timestamp = mmss_to_seconds(str(bucket["at"]))
         _merge_into(buckets_map, timestamp, _items_from_obj(bucket))
+        raw_roles = bucket.get("roles") or []
+        if raw_roles:
+            roles_map.setdefault(timestamp, [])
+            roles_map[timestamp].extend([str(r) for r in raw_roles])
     for event in (data.get("events", []) or []):
         timestamp = mmss_to_seconds(str(event["at"]))
         _merge_into(buckets_map, timestamp, _items_from_obj(event))
     _expand_rules((data.get("rules", []) or []), buckets_map)
 
-    buckets = [Bucket(t=timestamp, items=items) for timestamp, items in buckets_map.items()]
+    buckets = [
+        Bucket(t=timestamp, items=items, roles=roles_map.get(timestamp, []))
+        for timestamp, items in buckets_map.items()
+    ]
     buckets.sort(key=lambda bucket: bucket.t)
 
     windows: list[WarningWindow] = []

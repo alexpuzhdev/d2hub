@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from dota_hud.config.loader import load_config
+from dota_hud.domain.events import Bucket
 from dota_hud.ui.hud_style import HudStyle
 
 
@@ -95,3 +96,13 @@ def test_build_style_from_config(tmp_path: Path) -> None:
     assert style.width == cfg.hud.width
     assert style.block_padding == cfg.hud.block_padding
     assert style.macro_line_spacing == cfg.hud.macro_line_spacing
+
+
+def test_bucket_has_roles_field() -> None:
+    b = Bucket(t=0, items=["test"], roles=["carry", "mid"])
+    assert b.roles == ["carry", "mid"]
+
+
+def test_bucket_roles_default_empty() -> None:
+    b = Bucket(t=0, items=["test"])
+    assert b.roles == []
