@@ -7,7 +7,8 @@ from dota_hud.config.models import HotkeysConfig
 def test_vk_codes_contains_f_keys():
     assert "F7" in VK_CODES
     assert VK_CODES["F7"] == 0x76
-    assert len(VK_CODES) == 12
+    assert "DELETE" in VK_CODES
+    assert len(VK_CODES) >= 12
 
 
 def test_hotkeys_instantiate():

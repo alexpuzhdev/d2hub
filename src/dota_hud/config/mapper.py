@@ -104,7 +104,11 @@ def _load_presenter(raw: dict | None, macro_hints: list[str]) -> PresenterConfig
 def _load_hotkeys(raw: dict | None) -> HotkeysConfig:
     if not raw:
         return HotkeysConfig()
-    return HotkeysConfig(lock=str(raw.get("lock", HotkeysConfig().lock)))
+    defaults = HotkeysConfig()
+    return HotkeysConfig(
+        lock=str(raw.get("lock", defaults.lock)),
+        admin=str(raw.get("admin", defaults.admin)),
+    )
 
 
 def map_config(data: dict) -> AppConfig:

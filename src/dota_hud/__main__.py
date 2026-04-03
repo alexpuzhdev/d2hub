@@ -67,6 +67,8 @@ def main() -> None:
     )
     detector.start()
 
+    controller.set_on_admin(admin.show)
+
     tray.set_callbacks(
         on_open_settings=admin.show,
         on_toggle_hud=controller.toggle_hud_visibility,

@@ -11,6 +11,7 @@ hud:
 
 hotkeys:
   lock: F7
+  admin: DELETE
 
 macro_config: "macro.yaml"
 modules:

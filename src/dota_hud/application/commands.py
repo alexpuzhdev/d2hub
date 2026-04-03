@@ -10,6 +10,7 @@ class HudAction(str, Enum):
     STOP = "stop"
     RESET = "reset"
     LOCK = "lock"
+    ADMIN = "admin"
 
 
 __all__ = ["HudAction"]

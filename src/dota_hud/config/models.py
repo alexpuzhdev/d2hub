@@ -38,6 +38,7 @@ class HotkeysConfig:
     """Настройки горячих клавиш."""
 
     lock: str = "F7"
+    admin: str = "DELETE"
 
 
 @dataclass(frozen=True)

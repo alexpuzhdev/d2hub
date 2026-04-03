@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Callable
 
 from ..config.loader import load_config
 from ..config.models import AppConfig
@@ -49,6 +50,7 @@ class AppController:
         )
 
         self._current_role: str | None = None
+        self._on_admin: Callable[[], None] | None = None
 
         provider = infra_provider or InfraProvider()
         services = provider.build(config)
@@ -94,6 +96,10 @@ class AppController:
     def set_role(self, role: str) -> None:
         """Устанавливает текущую роль."""
         self._current_role = role
+
+    def set_on_admin(self, callback: Callable[[], None]) -> None:
+        """Устанавливает callback для открытия админки."""
+        self._on_admin = callback
 
     def shutdown(self) -> None:
         """Полное завершение."""
@@ -159,7 +165,11 @@ class AppController:
             actions = self._hotkeys.drain()
             if HudAction.LOCK in actions:
                 self._hud.toggle_lock()
-            cycle_actions = [action for action in actions if action is not HudAction.LOCK]
+            if HudAction.ADMIN in actions and self._on_admin:
+                self._on_admin()
+            cycle_actions = [
+                a for a in actions if a not in (HudAction.LOCK, HudAction.ADMIN)
+            ]
             cycle = self._cycle.run(
                 game_state,
                 cycle_actions,
