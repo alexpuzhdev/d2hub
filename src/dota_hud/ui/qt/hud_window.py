@@ -547,12 +547,21 @@ class HudQt(QtWidgets.QWidget):
         return color
 
     def _apply_macro_lines(self, lines: list["MacroLine"]) -> None:
-        for widget in self._macro_line_widgets:
-            self.macro_lines_layout.removeWidget(widget)
-            widget.deleteLater()
-        self._macro_line_widgets.clear()
+        old_count = len(self._macro_line_widgets)
+        is_fallback = old_count == 1 and isinstance(
+            self._macro_line_widgets[0], QtWidgets.QLabel
+        )
 
         if not lines:
+            # Need a fallback label — reuse if already showing one
+            if is_fallback:
+                return
+            # Remove all existing widgets
+            for widget in self._macro_line_widgets:
+                self.macro_lines_layout.removeWidget(widget)
+                widget.deleteLater()
+            self._macro_line_widgets.clear()
+
             fallback = QtWidgets.QLabel("MACRO: —")
             self._configure_block_label(fallback, self._style.font_size)
             fallback.setStyleSheet(
@@ -567,16 +576,36 @@ class HudQt(QtWidgets.QWidget):
             self._macro_line_widgets.append(fallback)
             return
 
-        for line in lines:
+        new_count = len(lines)
+
+        # If currently showing fallback, remove it first
+        if is_fallback:
+            w = self._macro_line_widgets[0]
+            self.macro_lines_layout.removeWidget(w)
+            w.deleteLater()
+            self._macro_line_widgets.clear()
+            old_count = 0
+
+        # Remove excess widgets
+        while len(self._macro_line_widgets) > new_count:
+            widget = self._macro_line_widgets.pop()
+            self.macro_lines_layout.removeWidget(widget)
+            widget.deleteLater()
+
+        # Add missing widgets
+        while len(self._macro_line_widgets) < new_count:
             bar = MacroProgressBar(
                 self._style.macro_bar_height,
                 self._colors.text_primary,
             )
             self._configure_macro_progress(bar)
-            color = self._parse_macro_color(line.color)
-            bar.set_data(line.text, line.progress or 0.0, color)
             self.macro_lines_layout.addWidget(bar)
             self._macro_line_widgets.append(bar)
+
+        # Update all widgets with new data
+        for bar, line in zip(self._macro_line_widgets, lines):
+            color = self._parse_macro_color(line.color)
+            bar.set_data(line.text, line.progress or 0.0, color)
 
     def set_macro(
         self,

@@ -119,3 +119,77 @@ class TestSetTimerSkipBehavior:
         with patch.object(hud.timer, "setText") as mock_set:
             hud.set_timer("1:31")
             mock_set.assert_called_once_with("1:31")
+
+
+# ---- MacroProgressBar widget pool tests ------------------------------------
+
+def _make_macro_lines(count: int):
+    """Create a list of MacroLine instances for testing."""
+    from dota_hud.application.models import MacroLine
+
+    return [
+        MacroLine(text=f"line-{i}", progress=i * 0.1, color=None)
+        for i in range(count)
+    ]
+
+
+class TestMacroLineWidgetPool:
+    def test_same_count_reuses_widgets(self) -> None:
+        """When line count stays the same, widget objects are reused."""
+        hud = _make_hud()
+        lines_a = _make_macro_lines(3)
+        hud._apply_macro_lines(lines_a)
+        widgets_before = list(hud._macro_line_widgets)
+
+        lines_b = _make_macro_lines(3)
+        hud._apply_macro_lines(lines_b)
+        widgets_after = list(hud._macro_line_widgets)
+
+        assert len(widgets_before) == 3
+        assert len(widgets_after) == 3
+        for before, after in zip(widgets_before, widgets_after):
+            assert before is after, "Widget should be reused, not recreated"
+
+    def test_shrink_removes_excess(self) -> None:
+        """Going from 3 lines to 2 should remove 1 widget."""
+        hud = _make_hud()
+        hud._apply_macro_lines(_make_macro_lines(3))
+        assert len(hud._macro_line_widgets) == 3
+        kept = list(hud._macro_line_widgets[:2])
+
+        hud._apply_macro_lines(_make_macro_lines(2))
+        assert len(hud._macro_line_widgets) == 2
+        for before, after in zip(kept, hud._macro_line_widgets):
+            assert before is after, "Surviving widgets should be reused"
+
+    def test_grow_adds_new(self) -> None:
+        """Going from 2 lines to 3 should add 1 widget, keeping existing."""
+        hud = _make_hud()
+        hud._apply_macro_lines(_make_macro_lines(2))
+        assert len(hud._macro_line_widgets) == 2
+        kept = list(hud._macro_line_widgets)
+
+        hud._apply_macro_lines(_make_macro_lines(3))
+        assert len(hud._macro_line_widgets) == 3
+        for before, after in zip(kept, hud._macro_line_widgets[:2]):
+            assert before is after, "Existing widgets should be reused"
+
+    def test_empty_lines_show_fallback(self) -> None:
+        """Empty lines list should show a single fallback QLabel."""
+        PySide6 = pytest.importorskip("PySide6")  # noqa: N806
+        from PySide6 import QtWidgets
+
+        hud = _make_hud()
+        hud._apply_macro_lines(_make_macro_lines(3))
+        hud._apply_macro_lines([])
+        assert len(hud._macro_line_widgets) == 1
+        assert isinstance(hud._macro_line_widgets[0], QtWidgets.QLabel)
+
+    def test_fallback_to_lines_replaces_label(self) -> None:
+        """Going from fallback to real lines should replace the QLabel."""
+        hud = _make_hud()
+        hud._apply_macro_lines([])
+        assert len(hud._macro_line_widgets) == 1
+
+        hud._apply_macro_lines(_make_macro_lines(2))
+        assert len(hud._macro_line_widgets) == 2
