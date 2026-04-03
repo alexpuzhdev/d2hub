@@ -95,6 +95,14 @@ class HudQt(QtWidgets.QWidget):
         self._on_close: Optional[Callable[[], None]] = None
         self._closing = False
 
+        # Dirty-flag tracking to skip redundant repaints
+        self._dirty = False
+        self._last_now_text = ""
+        self._last_now_level = ""
+        self._last_next_text = ""
+        self._last_next_level = ""
+        self._last_timer_text = ""
+
         self._configure_window()
         self._build_layout()
         self._apply_text_colors()
@@ -505,16 +513,32 @@ class HudQt(QtWidgets.QWidget):
 
     def set_timer(self, text: str) -> None:
         """Обновляет текст таймера."""
+        if text == self._last_timer_text:
+            return
+        self._last_timer_text = text
+        self._dirty = True
         self.timer.setText(text)
 
     def set_now(self, text: str, level: str | None = None) -> None:
         """Обновляет блок NOW."""
+        normalized_level = str(level or "")
+        if text == self._last_now_text and normalized_level == self._last_now_level:
+            return
+        self._last_now_text = text
+        self._last_now_level = normalized_level
+        self._dirty = True
         self.now.setText(text)
         self._set_block_level("now", level)
         self._resize_to_content()
 
     def set_next(self, text: str, level: str | None = None) -> None:
         """Обновляет блок NEXT."""
+        normalized_level = str(level or "")
+        if text == self._last_next_text and normalized_level == self._last_next_level:
+            return
+        self._last_next_text = text
+        self._last_next_level = normalized_level
+        self._dirty = True
         self.next.setText(text)
         self._set_block_level("next", level)
         self._resize_to_content()
