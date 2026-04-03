@@ -27,3 +27,11 @@ log_integration:
   poll_interval_ms: 100
   debounce_seconds: 8
 
+general:
+  dota_path: "C:/Program Files (x86)/Steam/steamapps/common/dota 2 beta"
+  gsi_port: 4000
+
+build_integration:
+  enabled: false
+  provider: "static"
+  static_path: "builds.json"
