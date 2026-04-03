@@ -72,18 +72,23 @@ class AppController:
         finally:
             self._shutdown_services()
 
-    def start_services(self) -> None:
-        """Запускает GSI сервер, хоткеи и показывает HUD."""
-        self._gsi_server.start()
+    def start_hotkeys_and_loop(self) -> None:
+        """Запускает хоткеи и основной loop (вызывать сразу при старте)."""
         self._hotkeys.start()
+        self._hud.every(200, self._loop)
+
+    def start_services(self) -> None:
+        """Запускает GSI сервер и показывает HUD (при обнаружении Dota)."""
+        self._gsi_server.start()
         if self._log_watcher:
             self._log_watcher.start()
         self._hud.show()
-        self._hud.every(200, self._loop)
 
     def stop_services(self) -> None:
-        """Останавливает сервисы и скрывает HUD."""
-        self._shutdown_services()
+        """Останавливает GSI и скрывает HUD."""
+        if self._log_watcher:
+            self._log_watcher.stop()
+        self._gsi_server.stop()
         self._hud.hide()
 
     def toggle_hud_visibility(self) -> None:
@@ -103,7 +108,10 @@ class AppController:
 
     def shutdown(self) -> None:
         """Полное завершение."""
-        self._shutdown_services()
+        self._hotkeys.stop()
+        if self._log_watcher:
+            self._log_watcher.stop()
+        self._gsi_server.stop()
         self._hud.close()
 
     def reload_config(self, config_path: "Path") -> None:

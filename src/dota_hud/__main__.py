@@ -78,6 +78,7 @@ def main() -> None:
     admin.set_on_recreate_gsi(_recreate_gsi)
 
     controller = AppController(config)
+    controller.start_hotkeys_and_loop()
 
     # Thread-safe bridge: DotaDetector callbacks run in a worker thread,
     # but Qt widgets must be updated from the main thread.
