@@ -34,7 +34,13 @@ def main() -> None:
     if app is None:
         app = QtWidgets.QApplication(sys.argv)
 
+    # Не завершать приложение при закрытии окон — живём в трее
+    app.setQuitOnLastWindowClosed(False)
+
     tray = TrayIcon()
+    if not QtWidgets.QSystemTrayIcon.isSystemTrayAvailable():
+        logger.warning("System tray is not available on this system")
+    tray.setVisible(True)
     tray.show()
     admin = AdminWindow()
 

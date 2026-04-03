@@ -94,6 +94,6 @@ class AppConfig:
 class PresenterConfig:
     """Настройки форматирования текстов."""
 
-    max_lines: int = 2
+    max_lines: int = 6
     macro_max_lines: int = 6
     macro_hints: List[str] = field(default_factory=list)
