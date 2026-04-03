@@ -1,26 +1,59 @@
 from __future__ import annotations
 
+import logging
 import sys
-
-
 from pathlib import Path
 
-from .application.app_controller import AppController
-
-
-def run_app(config_path: Path) -> None:
-    """Запускает HUD с заданной конфигурацией."""
-    controller = AppController.from_config_file(config_path)
-    controller.run()
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 
 def main() -> None:
-    """Точка входа CLI для запуска HUD."""
+    from PySide6 import QtWidgets
+    from .application.app_controller import AppController
+    from .config.loader import load_config
+    from .config.validator import validate_gsi_config, validate_yaml_configs
+    from .infrastructure.dota_detector import DotaDetector
+    from .ui.qt.tray import TrayIcon, TrayState
+    from .ui.qt.admin_window import AdminWindow
+
     project_root = Path(__file__).resolve().parents[2]
     default_config = project_root / "configs" / "timings.yaml"
-
     config_path = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else default_config
-    run_app(config_path)
+
+    yaml_result = validate_yaml_configs(config_path)
+    if not yaml_result.ok:
+        logger.error("Config errors: %s", yaml_result.errors)
+
+    config = load_config(config_path)
+
+    app = QtWidgets.QApplication.instance()
+    if app is None:
+        app = QtWidgets.QApplication(sys.argv)
+
+    tray = TrayIcon()
+    tray.show()
+    admin = AdminWindow()
+
+    controller = AppController(config)
+
+    detector = DotaDetector(
+        on_found=lambda: (tray.set_state(TrayState.DOTA_FOUND), controller.start_services()),
+        on_lost=lambda: (tray.set_state(TrayState.WAITING), controller.stop_services()),
+    )
+    detector.start()
+
+    tray.set_callbacks(
+        on_open_settings=admin.show,
+        on_toggle_hud=controller.toggle_hud_visibility,
+        on_role_changed=controller.set_role,
+        on_quit=lambda: (detector.stop(), controller.shutdown(), app.quit()),
+    )
+
+    sys.exit(app.exec())
 
 
 if __name__ == "__main__":

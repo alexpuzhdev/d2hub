@@ -57,7 +57,7 @@ class AppController:
         self._hud.set_on_close(self._on_close)
 
     def run(self) -> None:
-        """Запускает основной цикл приложения."""
+        """Запускает основной цикл приложения (для обратной совместимости)."""
         self._gsi_server.start()
         self._hotkeys.start()
         if self._log_watcher:
@@ -69,6 +69,48 @@ class AppController:
             self._hud.run()
         finally:
             self._shutdown_services()
+
+    def start_services(self) -> None:
+        """Запускает GSI сервер и хоткеи."""
+        self._gsi_server.start()
+        self._hotkeys.start()
+        if self._log_watcher:
+            self._log_watcher.start()
+        self._hud.every(200, self._loop)
+        self._hud.run()
+
+    def stop_services(self) -> None:
+        """Останавливает сервисы и скрывает HUD."""
+        self._shutdown_services()
+
+    def toggle_hud_visibility(self) -> None:
+        """Переключает видимость HUD."""
+        # For now, just toggle lock
+        self._hud.toggle_lock()
+
+    def set_role(self, role: str) -> None:
+        """Устанавливает текущую роль."""
+        self._current_role = role
+
+    def shutdown(self) -> None:
+        """Полное завершение."""
+        self._shutdown_services()
+        self._hud.close()
+
+    def reload_config(self, config_path: "Path") -> None:
+        """Перезагружает конфиг без перезапуска."""
+        from ..config.loader import load_config
+        config = load_config(config_path)
+        self._config = config
+        self._scheduler = Scheduler(config.buckets)
+        self._cycle = HudCycleUseCase(
+            scheduler=self._scheduler,
+            warning_service=self._warning_service,
+            presenter=self._presenter,
+            windows=config.windows,
+            resync_threshold_seconds=config.log_integration.resync_threshold_seconds,
+            gsi_timeout_seconds=config.log_integration.gsi_timeout_seconds,
+        )
 
     @staticmethod
     def from_config_file(config_path: Path) -> "AppController":

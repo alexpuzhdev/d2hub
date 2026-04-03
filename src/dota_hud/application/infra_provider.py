@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 import threading
 import time
 from dataclasses import dataclass
@@ -69,7 +70,13 @@ class InfraProvider:
             on_update=gsi_state_store.update,
             on_heartbeat=gsi_state_store.mark_heartbeat,
         )
-        hotkeys = Hotkeys(config.hotkeys)
+
+        if sys.platform == "win32":
+            from ..infrastructure.hotkeys_winapi import WinApiHotkeys
+            hotkeys: HotkeysPort = WinApiHotkeys(config.hotkeys)
+        else:
+            hotkeys = Hotkeys(config.hotkeys)
+
         log_watcher = self._build_log_watcher(config)
 
         return InfraServices(
