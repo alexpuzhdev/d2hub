@@ -7,6 +7,8 @@ from ..domain.macro_info import DEFAULT_MACRO_TIMINGS, MacroTiming
 from ..domain.warning_windows import WarningWindow
 from .models import (
     AppConfig,
+    BuildIntegrationConfig,
+    GeneralConfig,
     HotkeysConfig,
     HudConfig,
     LogIntegrationConfig,
@@ -173,6 +175,19 @@ def map_config(data: dict) -> AppConfig:
     macro_hints = _load_macro_hints(data.get("macro_hints"))
     presenter = _load_presenter(data.get("presenter"), macro_hints)
 
+    build_raw = data.get("build_integration", {})
+    build_config = BuildIntegrationConfig(
+        enabled=bool(build_raw.get("enabled", False)),
+        provider=str(build_raw.get("provider", "static")),
+        static_path=str(build_raw.get("static_path", "builds.json")),
+    )
+
+    general_raw = data.get("general", {})
+    general_config = GeneralConfig(
+        dota_path=str(general_raw.get("dota_path", "")),
+        gsi_port=int(general_raw.get("gsi_port", 4000)),
+    )
+
     return AppConfig(
         hud=hud,
         hotkeys=hotkeys,
@@ -181,4 +196,6 @@ def map_config(data: dict) -> AppConfig:
         windows=windows,
         macro_timings=_load_macro_timings(data.get("macro_timings")),
         presenter=presenter,
+        build_integration=build_config,
+        general=general_config,
     )

@@ -74,14 +74,28 @@ class Scheduler:
             return self._external_elapsed
         return 0 if self._start_at is None else int(time.time() - self._start_at)
 
-    def tick(self) -> TickState:
+    @staticmethod
+    def _filter_bucket(bucket: Optional[Bucket], role: Optional[str]) -> Optional[Bucket]:
+        """Фильтрует bucket по роли."""
+        if bucket is None or role is None or not bucket.roles:
+            return bucket
+        if role in bucket.roles:
+            return bucket
+        return None
+
+    def tick(self, role: Optional[str] = None) -> TickState:
         """Вычисляет новое состояние таймингов."""
         elapsed = self.elapsed()
 
         if elapsed == 0 and not self.is_running:
             next_event = self._buckets[0] if self._buckets else None
             after_event = self._buckets[1] if len(self._buckets) > 1 else None
-            return TickState(0, None, next_event, after_event)
+            return TickState(
+                0,
+                None,
+                self._filter_bucket(next_event, role),
+                self._filter_bucket(after_event, role),
+            )
 
         if elapsed < self._last_elapsed:
             self._buckets = list(self._base)
@@ -94,4 +108,9 @@ class Scheduler:
         after_event = self._buckets[1] if len(self._buckets) > 1 else None
         self._last_elapsed = elapsed
 
-        return TickState(elapsed, self._current, next_event, after_event)
+        return TickState(
+            elapsed,
+            self._filter_bucket(self._current, role),
+            self._filter_bucket(next_event, role),
+            self._filter_bucket(after_event, role),
+        )

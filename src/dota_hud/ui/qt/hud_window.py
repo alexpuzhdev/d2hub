@@ -100,6 +100,7 @@ class HudQt(QtWidgets.QWidget):
         self._last_next_text = ""
         self._last_next_level = ""
         self._last_timer_text = ""
+        self._last_build_text = ""
 
         self._configure_window()
         self._build_layout()
@@ -160,6 +161,18 @@ class HudQt(QtWidgets.QWidget):
         if self._style.macro_show_title:
             layout.addWidget(self.macro_title)
         layout.addWidget(self.macro_lines_container)
+        self.build_label = QtWidgets.QLabel("")
+        self._configure_block_label(self.build_label, self._style.font_size - 2)
+        self.build_label.setStyleSheet(
+            self._label_style(
+                self._colors.text_primary,
+                background=self._colors.block_background,
+                background_alpha=100,
+                padding=self._style.block_padding,
+            )
+        )
+        self.build_label.setVisible(False)
+        layout.addWidget(self.build_label)
         layout.addStretch(1)
 
         self.setLayout(layout)
@@ -618,6 +631,18 @@ class HudQt(QtWidgets.QWidget):
             self.macro_title.setText("MACRO:")
         self._set_block_level("macro", level)
         self._apply_macro_lines(lines or [])
+        self._resize_to_content()
+
+    def set_build(self, text: str) -> None:
+        """Обновляет блок BUILD."""
+        if text == self._last_build_text:
+            return
+        self._last_build_text = text
+        if not text:
+            self.build_label.setVisible(False)
+            return
+        self.build_label.setText(text)
+        self.build_label.setVisible(True)
         self._resize_to_content()
 
     def every(self, ms: int, fn: Callable[[], None]) -> None:

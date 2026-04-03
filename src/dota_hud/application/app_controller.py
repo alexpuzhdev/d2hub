@@ -48,6 +48,8 @@ class AppController:
             gsi_timeout_seconds=self._config.log_integration.gsi_timeout_seconds,
         )
 
+        self._current_role: str | None = None
+
         provider = infra_provider or InfraProvider()
         services = provider.build(config)
         self._apply_infra(services)
@@ -117,6 +119,7 @@ class AppController:
                 game_state,
                 cycle_actions,
                 last_heartbeat=self._gsi_state_store.last_heartbeat(),
+                role=self._current_role,
             )
             view_model = cycle.hud_state
 

@@ -28,6 +28,9 @@ class HudViewPort(Protocol):
     ) -> None:
         """Обновляет блок MACRO."""
 
+    def set_build(self, text: str) -> None:
+        """Обновляет блок BUILD."""
+
 
 class HudSchedulePort(Protocol):
     """Порт планирования циклов UI."""

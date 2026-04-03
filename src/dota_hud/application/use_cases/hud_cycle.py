@@ -47,6 +47,7 @@ class HudCycleUseCase:
         gsi_state: GameStateSnapshot | None,
         actions: Iterable[HudAction],
         last_heartbeat: float | None = None,
+        role: str | None = None,
     ) -> HudCycleResult:
         """Обновляет тайминги и возвращает состояние HUD."""
         paused_status = None
@@ -75,7 +76,7 @@ class HudCycleUseCase:
             elif action is HudAction.START:
                 self._scheduler.start()
 
-        tick_state = self._scheduler.tick()
+        tick_state = self._scheduler.tick(role=role)
         active_windows = self._warning_service.active_windows(
             tick_state.elapsed,
             self._windows,

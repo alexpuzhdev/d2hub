@@ -59,6 +59,23 @@ class LogIntegrationConfig:
 
 
 @dataclass(frozen=True)
+class BuildIntegrationConfig:
+    """Настройки интеграции сборок."""
+
+    enabled: bool = False
+    provider: str = "static"
+    static_path: str = "builds.json"
+
+
+@dataclass(frozen=True)
+class GeneralConfig:
+    """Общие настройки приложения."""
+
+    dota_path: str = ""
+    gsi_port: int = 4000
+
+
+@dataclass(frozen=True)
 class AppConfig:
     """Сводная конфигурация приложения HUD."""
 
@@ -69,6 +86,8 @@ class AppConfig:
     windows: List[WarningWindow]
     macro_timings: List[MacroTiming]
     presenter: "PresenterConfig"
+    build_integration: BuildIntegrationConfig = field(default_factory=BuildIntegrationConfig)
+    general: GeneralConfig = field(default_factory=GeneralConfig)
 
 
 @dataclass(frozen=True)
