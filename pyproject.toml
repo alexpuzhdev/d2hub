@@ -18,6 +18,7 @@ dota-hud = "dota_hud.__main__:main"
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.4"
 pytest-asyncio = ">=0.21"
+pytest-qt = "^4.4.0"
 ruff = "^0.8.5"
 mypy = "^1.13.0"
 pyinstaller = "^6.0"

@@ -71,22 +71,25 @@ class AppController:
             self._shutdown_services()
 
     def start_services(self) -> None:
-        """Запускает GSI сервер и хоткеи."""
+        """Запускает GSI сервер, хоткеи и показывает HUD."""
         self._gsi_server.start()
         self._hotkeys.start()
         if self._log_watcher:
             self._log_watcher.start()
+        self._hud.show()
         self._hud.every(200, self._loop)
-        self._hud.run()
 
     def stop_services(self) -> None:
         """Останавливает сервисы и скрывает HUD."""
         self._shutdown_services()
+        self._hud.hide()
 
     def toggle_hud_visibility(self) -> None:
         """Переключает видимость HUD."""
-        # For now, just toggle lock
-        self._hud.toggle_lock()
+        if self._hud.isVisible():
+            self._hud.hide()
+        else:
+            self._hud.show()
 
     def set_role(self, role: str) -> None:
         """Устанавливает текущую роль."""

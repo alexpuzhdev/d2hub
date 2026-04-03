@@ -12,10 +12,10 @@ logger = logging.getLogger(__name__)
 
 
 def main() -> None:
-    from PySide6 import QtWidgets
+    from PySide6 import QtCore, QtWidgets
     from .application.app_controller import AppController
     from .config.loader import load_config
-    from .config.validator import validate_gsi_config, validate_yaml_configs
+    from .config.validator import validate_yaml_configs
     from .infrastructure.dota_detector import DotaDetector
     from .ui.qt.tray import TrayIcon, TrayState
     from .ui.qt.admin_window import AdminWindow
@@ -40,9 +40,24 @@ def main() -> None:
 
     controller = AppController(config)
 
+    # Thread-safe bridge: DotaDetector callbacks run in a worker thread,
+    # but Qt widgets must be updated from the main thread.
+    # Use QMetaObject.invokeMethod with QueuedConnection via signals.
+    class DetectorBridge(QtCore.QObject):
+        dota_found = QtCore.Signal()
+        dota_lost = QtCore.Signal()
+
+    bridge = DetectorBridge()
+    bridge.dota_found.connect(
+        lambda: (tray.set_state(TrayState.DOTA_FOUND), controller.start_services())
+    )
+    bridge.dota_lost.connect(
+        lambda: (tray.set_state(TrayState.WAITING), controller.stop_services())
+    )
+
     detector = DotaDetector(
-        on_found=lambda: (tray.set_state(TrayState.DOTA_FOUND), controller.start_services()),
-        on_lost=lambda: (tray.set_state(TrayState.WAITING), controller.stop_services()),
+        on_found=bridge.dota_found.emit,
+        on_lost=bridge.dota_lost.emit,
     )
     detector.start()
 

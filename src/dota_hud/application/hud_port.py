@@ -48,6 +48,15 @@ class HudControlPort(Protocol):
     def toggle_lock(self) -> None:
         """Переключает режим блокировки."""
 
+    def show(self) -> None:
+        """Показывает окно HUD."""
+
+    def hide(self) -> None:
+        """Скрывает окно HUD."""
+
+    def isVisible(self) -> bool:
+        """Возвращает True если окно видимо."""
+
     def run(self) -> None:
         """Запускает цикл UI."""
 

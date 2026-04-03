@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-pytest.importorskip("PySide6")
+PySide6 = pytest.importorskip("PySide6")
 
 from dota_hud.ui.qt.tray import ROLE_LABELS, TrayIcon, TrayState  # noqa: E402
 
@@ -22,6 +22,7 @@ def test_role_labels_dict() -> None:
     assert len(ROLE_LABELS) == 5
 
 
-def test_tray_instantiation(qtbot: object) -> None:
+@pytest.mark.usefixtures()
+def test_tray_instantiation(qtbot) -> None:  # type: ignore[no-untyped-def]
     tray = TrayIcon()
     assert tray.state == TrayState.WAITING
