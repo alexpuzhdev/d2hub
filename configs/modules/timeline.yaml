@@ -3,6 +3,13 @@ timeline:
     items:
       - "Старт: стянуться на баунти врагов / стать под свою"
 
+  - at: "0:00"
+    items:
+      - "Купить OBS + Sentry, стакнуть лагерь"
+    roles:
+      - soft_support
+      - hard_support
+
   - at: "5:00"
     items:
       - "Заколить сапа купить OBS + Sentry на линию + мид / купить самому"
