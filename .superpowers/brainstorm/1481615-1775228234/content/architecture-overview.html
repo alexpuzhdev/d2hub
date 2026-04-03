@@ -1,0 +1,77 @@
+<h2>Архитектура D2Hub v2</h2>
+<p class="subtitle">System tray + HUD overlay + Admin panel</p>
+
+<div class="mockup">
+  <div class="mockup-header">Обзор компонентов</div>
+  <div class="mockup-body" style="padding: 24px; font-family: monospace; font-size: 13px; line-height: 1.8;">
+    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+
+      <!-- System Tray -->
+      <div style="flex: 1; min-width: 200px; background: rgba(139,92,246,0.12); border: 1px solid rgba(139,92,246,0.3); border-radius: 8px; padding: 16px;">
+        <div style="font-weight: bold; color: #8b5cf6; margin-bottom: 8px;">🔲 System Tray</div>
+        <div style="font-size: 12px; color: #ccc; line-height: 1.6;">
+          • Иконка в трее (статус: цвет)<br>
+          • Правый клик → меню:<br>
+          &nbsp;&nbsp;- Открыть настройки<br>
+          &nbsp;&nbsp;- Роль: [Carry ▾]<br>
+          &nbsp;&nbsp;- Показать/скрыть HUD<br>
+          &nbsp;&nbsp;- Выход<br>
+          • Автодетект dota2.exe<br>
+          • Валидация конфига при старте
+        </div>
+      </div>
+
+      <!-- HUD Overlay -->
+      <div style="flex: 1; min-width: 200px; background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.3); border-radius: 8px; padding: 16px;">
+        <div style="font-weight: bold; color: #3b82f6; margin-bottom: 8px;">🎮 HUD Overlay (без изменений)</div>
+        <div style="font-size: 12px; color: #ccc; line-height: 1.6;">
+          • Timer / NOW / NEXT / MACRO<br>
+          • Warning windows<br>
+          • <span style="color: #fbbf24;">+ Build hint (новое)</span><br>
+          &nbsp;&nbsp;"Next: BKB ~4200g"<br>
+          &nbsp;&nbsp;вкл/выкл через настройки<br>
+          • Frameless, click-through<br>
+          • Показан только при Dota
+        </div>
+      </div>
+
+      <!-- Admin Panel -->
+      <div style="flex: 1; min-width: 200px; background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.3); border-radius: 8px; padding: 16px;">
+        <div style="font-weight: bold; color: #22c55e; margin-bottom: 8px;">⚙️ Admin Panel (Qt)</div>
+        <div style="font-size: 12px; color: #ccc; line-height: 1.6;">
+          • Вкладки:<br>
+          &nbsp;&nbsp;- Тайминги (timeline)<br>
+          &nbsp;&nbsp;- Правила (rules)<br>
+          &nbsp;&nbsp;- Предупреждения (windows)<br>
+          &nbsp;&nbsp;- Macro тайминги<br>
+          &nbsp;&nbsp;- Сборка героя<br>
+          &nbsp;&nbsp;- Общие настройки<br>
+          • Hot-reload YAML<br>
+          • CRUD без перезапуска
+        </div>
+      </div>
+    </div>
+
+    <!-- Data flow -->
+    <div style="margin-top: 24px; background: rgba(255,255,255,0.05); border-radius: 8px; padding: 16px;">
+      <div style="font-weight: bold; color: #e5e7eb; margin-bottom: 8px;">Поток данных</div>
+      <div style="font-size: 12px; color: #9ca3af; line-height: 2;">
+        <code style="color: #fbbf24;">Dota 2</code> →(GSI POST)→ <code style="color: #3b82f6;">GSI Server :4000</code> →(hero, items, map, player)→ <code style="color: #8b5cf6;">AppController</code><br>
+        <code style="color: #8b5cf6;">AppController</code> →(role detection)→ <code style="color: #22c55e;">Role-filtered timings</code> → <code style="color: #3b82f6;">HUD Overlay</code><br>
+        <code style="color: #8b5cf6;">AppController</code> →(hero name)→ <code style="color: #fbbf24;">d2pt API</code> →(build)→ <code style="color: #3b82f6;">HUD "Next item" hint</code><br>
+        <code style="color: #22c55e;">Admin Panel</code> →(save YAML)→ <code style="color: #8b5cf6;">AppController.reload()</code> → <code style="color: #3b82f6;">HUD обновлён</code>
+      </div>
+    </div>
+
+    <!-- Process lifecycle -->
+    <div style="margin-top: 16px; background: rgba(255,255,255,0.05); border-radius: 8px; padding: 16px;">
+      <div style="font-weight: bold; color: #e5e7eb; margin-bottom: 8px;">Жизненный цикл</div>
+      <div style="font-size: 12px; color: #9ca3af; line-height: 2;">
+        <code style="color: #22c55e;">Запуск (.exe / ярлык)</code> → Валидация конфигов → <code style="color: #8b5cf6;">Tray icon (серый)</code><br>
+        Поллинг dota2.exe (5 сек) → Dota найдена → <code style="color: #8b5cf6;">Tray icon (зелёный)</code> + GSI сервер старт<br>
+        GSI данные получены → hero определён → роль предложена → <code style="color: #3b82f6;">HUD показан</code><br>
+        Dota закрыта → HUD скрыт → GSI сервер стоп → <code style="color: #8b5cf6;">Tray (серый, ожидание)</code>
+      </div>
+    </div>
+  </div>
+</div>

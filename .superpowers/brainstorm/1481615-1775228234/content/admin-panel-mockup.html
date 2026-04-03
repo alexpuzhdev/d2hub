@@ -1,0 +1,138 @@
+<h2>Макет админки D2Hub</h2>
+<p class="subtitle">Qt окно из system tray — вкладки с CRUD</p>
+
+<div class="mockup">
+  <div class="mockup-header">Admin Panel — вкладка "Тайминги"</div>
+  <div class="mockup-body" style="padding: 0; background: #1a1f2e;">
+
+    <!-- Tab bar -->
+    <div style="display: flex; background: #141820; border-bottom: 1px solid #2a3040; font-size: 12px;">
+      <div style="padding: 10px 16px; color: #8b5cf6; border-bottom: 2px solid #8b5cf6; font-weight: bold;">Тайминги</div>
+      <div style="padding: 10px 16px; color: #6b7280;">Правила</div>
+      <div style="padding: 10px 16px; color: #6b7280;">Предупреждения</div>
+      <div style="padding: 10px 16px; color: #6b7280;">Macro</div>
+      <div style="padding: 10px 16px; color: #6b7280;">Сборка</div>
+      <div style="padding: 10px 16px; color: #6b7280;">Настройки</div>
+      <div style="padding: 10px 16px; color: #6b7280;">Статус</div>
+    </div>
+
+    <!-- Toolbar -->
+    <div style="display: flex; gap: 8px; padding: 12px 16px; border-bottom: 1px solid #2a3040;">
+      <div style="padding: 6px 14px; background: #8b5cf6; color: white; border-radius: 4px; font-size: 12px; cursor: pointer;">+ Добавить</div>
+      <div style="padding: 6px 14px; background: #2a3040; color: #9ca3af; border-radius: 4px; font-size: 12px; cursor: pointer;">✏ Изменить</div>
+      <div style="padding: 6px 14px; background: #2a3040; color: #ef4444; border-radius: 4px; font-size: 12px; cursor: pointer;">🗑 Удалить</div>
+      <div style="flex:1;"></div>
+      <div style="padding: 6px 14px; background: #22c55e; color: white; border-radius: 4px; font-size: 12px; cursor: pointer;">💾 Сохранить</div>
+    </div>
+
+    <!-- Table -->
+    <div style="padding: 0 16px 16px;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px;">
+        <thead>
+          <tr style="color: #6b7280; text-align: left; border-bottom: 1px solid #2a3040;">
+            <th style="padding: 8px 12px; width: 80px;">Время</th>
+            <th style="padding: 8px 12px;">Подсказка</th>
+            <th style="padding: 8px 12px; width: 160px;">Роли</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="color: #e5e7eb; border-bottom: 1px solid #1e2433;">
+            <td style="padding: 8px 12px; color: #fbbf24; font-family: monospace;">0:00</td>
+            <td style="padding: 8px 12px;">Старт: стак для сапёров, купить OBS+Sentry</td>
+            <td style="padding: 8px 12px;"><span style="background:#2a3040; padding: 2px 8px; border-radius: 10px; font-size: 11px; color: #22c55e;">soft_sup</span> <span style="background:#2a3040; padding: 2px 8px; border-radius: 10px; font-size: 11px; color: #22c55e;">hard_sup</span></td>
+          </tr>
+          <tr style="color: #e5e7eb; border-bottom: 1px solid #1e2433; background: rgba(139,92,246,0.08);">
+            <td style="padding: 8px 12px; color: #fbbf24; font-family: monospace;">3:00</td>
+            <td style="padding: 8px 12px;">Проверить руну, стакнуть лагерь</td>
+            <td style="padding: 8px 12px;"><span style="background:#2a3040; padding: 2px 8px; border-radius: 10px; font-size: 11px; color: #8b5cf6;">все</span></td>
+          </tr>
+          <tr style="color: #e5e7eb; border-bottom: 1px solid #1e2433;">
+            <td style="padding: 8px 12px; color: #fbbf24; font-family: monospace;">5:00</td>
+            <td style="padding: 8px 12px;">Catapult wave — пуш/дайв</td>
+            <td style="padding: 8px 12px;"><span style="background:#2a3040; padding: 2px 8px; border-radius: 10px; font-size: 11px; color: #3b82f6;">mid</span> <span style="background:#2a3040; padding: 2px 8px; border-radius: 10px; font-size: 11px; color: #3b82f6;">offlane</span></td>
+          </tr>
+          <tr style="color: #e5e7eb; border-bottom: 1px solid #1e2433; background: rgba(139,92,246,0.08);">
+            <td style="padding: 8px 12px; color: #fbbf24; font-family: monospace;">7:00</td>
+            <td style="padding: 8px 12px;">Wisdom rune ready</td>
+            <td style="padding: 8px 12px;"><span style="background:#2a3040; padding: 2px 8px; border-radius: 10px; font-size: 11px; color: #8b5cf6;">все</span></td>
+          </tr>
+          <tr style="color: #e5e7eb; border-bottom: 1px solid #1e2433;">
+            <td style="padding: 8px 12px; color: #fbbf24; font-family: monospace;">10:00</td>
+            <td style="padding: 8px 12px;">Roshan timer — ward pit</td>
+            <td style="padding: 8px 12px;"><span style="background:#2a3040; padding: 2px 8px; border-radius: 10px; font-size: 11px; color: #8b5cf6;">все</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Status bar mockup -->
+<div style="margin-top: 24px;">
+  <div class="mockup">
+    <div class="mockup-header">Admin Panel — вкладка "Статус"</div>
+    <div class="mockup-body" style="padding: 20px; background: #1a1f2e; font-size: 13px;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+
+        <div style="background: #141820; border-radius: 8px; padding: 16px;">
+          <div style="color: #6b7280; font-size: 11px; text-transform: uppercase; margin-bottom: 8px;">Dota 2</div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 10px; height: 10px; border-radius: 50%; background: #22c55e;"></div>
+            <span style="color: #e5e7eb;">Запущена</span>
+          </div>
+        </div>
+
+        <div style="background: #141820; border-radius: 8px; padding: 16px;">
+          <div style="color: #6b7280; font-size: 11px; text-transform: uppercase; margin-bottom: 8px;">GSI</div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 10px; height: 10px; border-radius: 50%; background: #22c55e;"></div>
+            <span style="color: #e5e7eb;">Подключён (port 4000)</span>
+          </div>
+        </div>
+
+        <div style="background: #141820; border-radius: 8px; padding: 16px;">
+          <div style="color: #6b7280; font-size: 11px; text-transform: uppercase; margin-bottom: 8px;">Герой</div>
+          <div style="color: #e5e7eb;">Crystal Maiden</div>
+        </div>
+
+        <div style="background: #141820; border-radius: 8px; padding: 16px;">
+          <div style="color: #6b7280; font-size: 11px; text-transform: uppercase; margin-bottom: 8px;">Роль</div>
+          <div style="color: #22c55e;">Hard Support (авто)</div>
+        </div>
+
+        <div style="background: #141820; border-radius: 8px; padding: 16px; grid-column: span 2;">
+          <div style="color: #6b7280; font-size: 11px; text-transform: uppercase; margin-bottom: 8px;">GSI конфиг</div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 10px; height: 10px; border-radius: 50%; background: #22c55e;"></div>
+            <span style="color: #e5e7eb;">Валиден — map, hero, player, items</span>
+          </div>
+          <div style="margin-top: 8px;">
+            <span style="padding: 4px 12px; background: #2a3040; color: #9ca3af; border-radius: 4px; font-size: 11px; cursor: pointer;">🔄 Пересоздать GSI конфиг</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tray mockup -->
+<div style="margin-top: 24px;">
+  <div class="mockup">
+    <div class="mockup-header">System Tray — контекстное меню</div>
+    <div class="mockup-body" style="padding: 20px; background: #1a1f2e; display: flex; justify-content: center;">
+      <div style="background: #2a3040; border-radius: 8px; padding: 4px 0; width: 220px; font-size: 12px;">
+        <div style="padding: 8px 16px; color: #e5e7eb; display: flex; align-items: center; gap: 8px;">
+          <div style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e;"></div>
+          Dota: Online
+        </div>
+        <div style="height: 1px; background: #3a4050; margin: 2px 8px;"></div>
+        <div style="padding: 8px 16px; color: #e5e7eb; cursor: pointer;">⚙️ Открыть настройки</div>
+        <div style="padding: 8px 16px; color: #e5e7eb; cursor: pointer;">👁 Показать HUD</div>
+        <div style="padding: 8px 16px; color: #e5e7eb; cursor: pointer;">🎭 Роль: <span style="color: #22c55e;">Hard Support ▾</span></div>
+        <div style="height: 1px; background: #3a4050; margin: 2px 8px;"></div>
+        <div style="padding: 8px 16px; color: #ef4444; cursor: pointer;">✕ Выход</div>
+      </div>
+    </div>
+  </div>
+</div>
