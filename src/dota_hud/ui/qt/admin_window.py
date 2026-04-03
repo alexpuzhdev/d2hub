@@ -273,9 +273,15 @@ class AdminWindow(QtWidgets.QWidget):
         if path:
             self.settings_dota_path.setText(path)
 
+    def set_on_recreate_gsi(self, callback: "Callable[[], None]") -> None:
+        """Устанавливает callback для пересоздания GSI конфига."""
+        self._on_recreate_gsi = callback
+
     def _handle_recreate_gsi(self) -> None:
-        logger.info("Recreate GSI config requested")
-        # Will be connected to actual logic in AppController
+        if hasattr(self, "_on_recreate_gsi") and self._on_recreate_gsi:
+            self._on_recreate_gsi()
+        else:
+            logger.warning("Recreate GSI callback not set")
 
     def update_status(
         self,
@@ -298,6 +304,76 @@ class AdminWindow(QtWidgets.QWidget):
         self.status_hero.setText(f"Герой: {hero_name or '—'}")
         self.status_role.setText(f"Роль: {role or '—'}")
         self.status_config.setText(f"Конфиг: {'Валиден' if config_valid else 'Ошибка'}")
+
+    def load_from_raw_config(self, raw: dict) -> None:
+        """Загружает все вкладки из raw YAML dict."""
+        # Timeline
+        self.load_timeline(raw.get("timeline", []))
+
+        # Rules
+        self.load_rules(raw.get("rules", []))
+
+        # Windows
+        self.load_windows(raw.get("windows", []) + raw.get("danger_windows", []))
+
+        # Macro
+        self.load_macro(raw.get("macro_timings", []))
+
+        # Settings
+        hud = raw.get("hud", {})
+        self.settings_x.setValue(int(hud.get("x", 30)))
+        self.settings_y.setValue(int(hud.get("y", 30)))
+        self.settings_alpha.setValue(float(hud.get("alpha", 0.6)))
+        self.settings_font_size.setValue(int(hud.get("font_size", 18)))
+
+        hotkeys = raw.get("hotkeys", {})
+        lock_key = str(hotkeys.get("lock", "F7"))
+        idx = self.settings_lock_key.findText(lock_key)
+        if idx >= 0:
+            self.settings_lock_key.setCurrentIndex(idx)
+
+        general = raw.get("general", {})
+        self.settings_dota_path.setText(str(general.get("dota_path", "")))
+
+    def load_rules(self, data: list[dict]) -> None:
+        """Загружает данные rules в таблицу."""
+        self.rules_table.setRowCount(0)
+        for entry in data:
+            row = self.rules_table.rowCount()
+            self.rules_table.insertRow(row)
+            self.rules_table.setItem(row, 0, QtWidgets.QTableWidgetItem(str(entry.get("start", ""))))
+            self.rules_table.setItem(row, 1, QtWidgets.QTableWidgetItem(str(entry.get("until", ""))))
+            self.rules_table.setItem(row, 2, QtWidgets.QTableWidgetItem(str(entry.get("every_seconds", ""))))
+            items = entry.get("items", [])
+            self.rules_table.setItem(row, 3, QtWidgets.QTableWidgetItem(", ".join(items) if isinstance(items, list) else str(items)))
+            roles = entry.get("roles", [])
+            self.rules_table.setItem(row, 4, QtWidgets.QTableWidgetItem(", ".join(roles) if roles else "все"))
+
+    def load_windows(self, data: list[dict]) -> None:
+        """Загружает данные windows в таблицу."""
+        self.windows_table.setRowCount(0)
+        for entry in data:
+            if not entry:
+                continue
+            row = self.windows_table.rowCount()
+            self.windows_table.insertRow(row)
+            self.windows_table.setItem(row, 0, QtWidgets.QTableWidgetItem(str(entry.get("from", ""))))
+            self.windows_table.setItem(row, 1, QtWidgets.QTableWidgetItem(str(entry.get("to", ""))))
+            self.windows_table.setItem(row, 2, QtWidgets.QTableWidgetItem(str(entry.get("level", "info"))))
+            self.windows_table.setItem(row, 3, QtWidgets.QTableWidgetItem(str(entry.get("priority", 0))))
+            self.windows_table.setItem(row, 4, QtWidgets.QTableWidgetItem(str(entry.get("text", ""))))
+
+    def load_macro(self, data: list[dict]) -> None:
+        """Загружает данные macro в таблицу."""
+        self.macro_table.setRowCount(0)
+        for entry in data:
+            row = self.macro_table.rowCount()
+            self.macro_table.insertRow(row)
+            self.macro_table.setItem(row, 0, QtWidgets.QTableWidgetItem(str(entry.get("name", ""))))
+            self.macro_table.setItem(row, 1, QtWidgets.QTableWidgetItem(str(entry.get("first_spawn", ""))))
+            self.macro_table.setItem(row, 2, QtWidgets.QTableWidgetItem(str(entry.get("interval", ""))))
+            self.macro_table.setItem(row, 3, QtWidgets.QTableWidgetItem(str(entry.get("up_window", ""))))
+            self.macro_table.setItem(row, 4, QtWidgets.QTableWidgetItem(str(entry.get("color", ""))))
 
     def load_timeline(self, data: list[dict]) -> None:
         """Загружает данные timeline в таблицу."""

@@ -15,7 +15,9 @@ def main() -> None:
     from PySide6 import QtCore, QtWidgets
     from .application.app_controller import AppController
     from .config.loader import load_config
+    from .config.reader import read_config
     from .config.validator import validate_yaml_configs
+    from .config.gsi_config_writer import write_gsi_config
     from .infrastructure.dota_detector import DotaDetector
     from .ui.qt.tray import TrayIcon, TrayState
     from .ui.qt.admin_window import AdminWindow
@@ -30,6 +32,22 @@ def main() -> None:
 
     config = load_config(config_path)
 
+    # Читаем raw YAML для заполнения админки
+    raw_config = read_config(config_path)
+    # Мерж модулей для raw данных
+    config_dir = config_path.parent
+    for module_path in raw_config.get("modules", []):
+        module_data = read_config(config_dir / module_path)
+        for key in ("timeline", "rules", "windows", "danger_windows"):
+            if key in module_data:
+                raw_config.setdefault(key, []).extend(module_data[key])
+    # Мерж macro
+    macro_path = raw_config.get("macro_config")
+    if macro_path:
+        macro_data = read_config(config_dir / macro_path)
+        if "macro_timings" in macro_data:
+            raw_config["macro_timings"] = macro_data["macro_timings"]
+
     app = QtWidgets.QApplication.instance()
     if app is None:
         app = QtWidgets.QApplication(sys.argv)
@@ -43,6 +61,21 @@ def main() -> None:
     tray.setVisible(True)
     tray.show()
     admin = AdminWindow()
+    admin.load_from_raw_config(raw_config)
+
+    # Кнопка пересоздания GSI конфига
+    def _recreate_gsi() -> None:
+        dota_path = admin.settings_dota_path.text().strip()
+        if not dota_path:
+            QtWidgets.QMessageBox.warning(admin, "Ошибка", "Укажите путь к Dota 2 во вкладке Настройки")
+            return
+        try:
+            cfg = write_gsi_config(Path(dota_path))
+            QtWidgets.QMessageBox.information(admin, "Готово", f"GSI конфиг создан:\n{cfg}\n\nПерезапустите Dota 2!")
+        except Exception as e:
+            QtWidgets.QMessageBox.critical(admin, "Ошибка", f"Не удалось создать GSI конфиг:\n{e}")
+
+    admin.set_on_recreate_gsi(_recreate_gsi)
 
     controller = AppController(config)
 
